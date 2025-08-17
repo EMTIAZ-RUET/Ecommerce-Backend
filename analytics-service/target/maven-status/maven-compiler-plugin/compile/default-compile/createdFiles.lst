@@ -1,0 +1,3 @@
+com\ironsoftware\analyticsservice\model\AnalyticsEvent.class
+com\ironsoftware\analyticsservice\AnalyticsServiceApplication.class
+com\ironsoftware\analyticsservice\model\AnalyticsEvent$AnalyticsEventBuilder.class

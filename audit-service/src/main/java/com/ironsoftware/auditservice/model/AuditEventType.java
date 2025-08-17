@@ -1,0 +1,24 @@
+package com.ironsoftware.auditservice.model;
+
+public enum AuditEventType {
+    USER_LOGIN,
+    USER_LOGOUT,
+    USER_REGISTRATION,
+    USER_UPDATE,
+    USER_DELETE,
+    PRODUCT_CREATE,
+    PRODUCT_UPDATE,
+    PRODUCT_DELETE,
+    ORDER_CREATE,
+    ORDER_UPDATE,
+    ORDER_CANCEL,
+    PAYMENT_PROCESS,
+    PAYMENT_REFUND,
+    INVENTORY_UPDATE,
+    CART_ADD,
+    CART_REMOVE,
+    CART_CHECKOUT,
+    ADMIN_ACTION,
+    SECURITY_EVENT,
+    SYSTEM_ERROR
+}

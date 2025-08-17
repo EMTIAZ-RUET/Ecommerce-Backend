@@ -1,0 +1,7 @@
+com\ironsoftware\searchservice\model\ProductDocument$ProductDocumentBuilder.class
+com\ironsoftware\searchservice\config\OpenSearchConfig.class
+com\ironsoftware\searchservice\model\ProductDocument.class
+com\ironsoftware\searchservice\model\SearchIndex.class
+com\ironsoftware\searchservice\service\ProductSearchService.class
+com\ironsoftware\searchservice\model\SearchIndex$SearchIndexBuilder.class
+com\ironsoftware\searchservice\SearchServiceApplication.class

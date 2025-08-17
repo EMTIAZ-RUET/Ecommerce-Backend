@@ -1,0 +1,53 @@
+server:
+  port: 8089
+
+spring:
+  application:
+    name: notification-service
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/notification-service
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: admin
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# Notification Configuration
+notification:
+  sms:
+    twilio:
+      account-sid: ${TWILIO_ACCOUNT_SID}
+      auth-token: ${TWILIO_AUTH_TOKEN}
+      from-number: ${TWILIO_PHONE_NUMBER}
+  email:
+    from: noreply@ironsoftware.com
+    template-path: /templates/email
+  push:
+    firebase:
+      credentials-file: /credentials/firebase-service-account.json
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}

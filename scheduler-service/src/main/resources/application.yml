@@ -1,0 +1,53 @@
+server:
+  port: 8094
+
+spring:
+  application:
+    name: scheduler-service
+  redis:
+    host: ${SPRING_REDIS_HOST:localhost}
+    port: ${SPRING_REDIS_PORT:6379}
+    database: 0
+    timeout: 60000
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 2
+        max-wait: -1ms
+
+scheduler:
+  cleanup:
+    cron: "0 0 * * * *" # Every hour
+  metrics:
+    cron: "0 */15 * * * *" # Every 15 minutes
+  report:
+    cron: "0 0 0 * * *" # Daily at midnight
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  level:
+    root: INFO
+    com.ironsoftware: DEBUG
+    org.springframework.scheduling: INFO

@@ -1,0 +1,7 @@
+com\ironsoftware\authservice\controller\AuthController.class
+com\ironsoftware\authservice\service\KeycloakService.class
+com\ironsoftware\authservice\dto\TokenResponse$TokenResponseBuilder.class
+com\ironsoftware\authservice\dto\RegisterRequest.class
+com\ironsoftware\authservice\config\SecurityConfig.class
+com\ironsoftware\authservice\dto\TokenResponse.class
+com\ironsoftware\authservice\dto\LoginRequest.class

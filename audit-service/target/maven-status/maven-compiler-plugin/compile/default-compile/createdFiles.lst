@@ -1,0 +1,8 @@
+com\ironsoftware\auditservice\model\AuditLog.class
+com\ironsoftware\auditservice\AuditServiceApplication.class
+com\ironsoftware\auditservice\repository\AuditLogRepository.class
+com\ironsoftware\auditservice\model\AuditLog$AuditLogBuilder.class
+com\ironsoftware\auditservice\model\AuditEvent$AuditEventBuilder.class
+com\ironsoftware\auditservice\model\AuditEvent.class
+com\ironsoftware\auditservice\model\AuditEventType.class
+com\ironsoftware\auditservice\service\AuditService.class

@@ -1,0 +1,45 @@
+server:
+  port: 8091
+
+spring:
+  application:
+    name: search-service
+  elasticsearch:
+    uris: http://localhost:9200
+    username: elastic
+    password: ${ELASTIC_PASSWORD}
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: search-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+
+# Search Configuration
+search:
+  index:
+    products: products-index
+    orders: orders-index
+  settings:
+    shards: 3
+    replicas: 1
+  refresh-interval: 1s
+  analyzers:
+    - standard
+    - english
+    - ngram
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}

@@ -1,0 +1,7 @@
+com\ironsoftware\schedulerservice\model\ScheduledTask.class
+com\ironsoftware\schedulerservice\model\ScheduledTask$ScheduledTaskBuilder.class
+com\ironsoftware\schedulerservice\SchedulerServiceApplication.class
+com\ironsoftware\schedulerservice\model\TaskStatus.class
+com\ironsoftware\scheduler\jobs\MaintenanceJobs.class
+com\ironsoftware\schedulerservice\model\TaskPriority.class
+com\ironsoftware\scheduler\config\SchedulerConfig.class

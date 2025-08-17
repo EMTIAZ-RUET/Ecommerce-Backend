@@ -1,0 +1,42 @@
+---
+execution:
+  - scenario: basic-load-test
+    concurrency: 100
+    ramp-up: 2m
+    hold-for: 10m
+    scenarios:
+      basic-load-test:
+        requests:
+          - url: http://api-gateway:8080/api/products
+            method: GET
+          - url: http://api-gateway:8080/api/cart
+            method: POST
+            headers:
+              Content-Type: application/json
+            body:
+              productId: "123"
+              quantity: 1
+          - url: http://api-gateway:8080/api/orders
+            method: POST
+            headers:
+              Content-Type: application/json
+            body:
+              items:
+                - productId: "123"
+                  quantity: 1
+
+settings:
+  check-interval: 10s
+  default-address: http://api-gateway:8080
+
+reporting:
+  - module: final-stats
+  - module: console
+
+services:
+  - module: monitoring
+    local:
+      - metrics:
+          - cpu
+          - memory
+          - network

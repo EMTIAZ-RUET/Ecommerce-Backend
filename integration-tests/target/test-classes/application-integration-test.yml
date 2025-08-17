@@ -1,0 +1,102 @@
+spring:
+  application:
+    name: integration-tests
+  
+  # Test Database Configuration
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  
+  # Test Kafka Configuration
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: integration-test-group
+      auto-offset-reset: earliest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+# API Gateway Configuration for Testing
+api:
+  gateway:
+    url: http://localhost:8080
+  
+# Service URLs for Integration Testing
+services:
+  user-service:
+    url: http://localhost:8081
+  auth-service:
+    url: http://localhost:8082
+  product-service:
+    url: http://localhost:8083
+  inventory-service:
+    url: http://localhost:8084
+  cart-service:
+    url: http://localhost:8085
+  order-service:
+    url: http://localhost:8086
+  payment-service:
+    url: http://localhost:8087
+  delivery-service:
+    url: http://localhost:8088
+  notification-service:
+    url: http://localhost:8089
+  review-service:
+    url: http://localhost:8090
+  search-service:
+    url: http://localhost:8091
+  recommendation-service:
+    url: http://localhost:8092
+  analytics-service:
+    url: http://localhost:8093
+  reporting-service:
+    url: http://localhost:8094
+  audit-service:
+    url: http://localhost:8095
+  backup-service:
+    url: http://localhost:8096
+  scheduler-service:
+    url: http://localhost:8097
+  monitoring-service:
+    url: http://localhost:8098
+  logging-service:
+    url: http://localhost:8099
+
+# Test Configuration
+test:
+  timeout:
+    default: 30s
+    long-running: 60s
+  retry:
+    max-attempts: 3
+    delay: 2s
+
+# Logging Configuration for Tests
+logging:
+  level:
+    com.ironsoftware: DEBUG
+    org.springframework.web: INFO
+    org.springframework.test: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Management endpoints for testing
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

@@ -1,0 +1,81 @@
+keycloak:
+  image: quay.io/keycloak/keycloak:21.1.1
+  container_name: keycloak
+  environment:
+    KEYCLOAK_ADMIN: admin
+    KEYCLOAK_ADMIN_PASSWORD: admin
+    KC_DB: postgres
+    KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+    KC_DB_USERNAME: postgres
+    KC_DB_PASSWORD: postgres
+  ports:
+    - "8443:8443"
+  depends_on:
+    - postgres
+
+rabbitmq:
+  image: rabbitmq:3.12-management
+  container_name: rabbitmq
+  ports:
+    - "5672:5672"
+    - "15672:15672"
+  environment:
+    - RABBITMQ_DEFAULT_USER=admin
+    - RABBITMQ_DEFAULT_PASS=admin
+
+apache-nifi:
+  image: apache/nifi:1.23.2
+  container_name: apache-nifi
+  ports:
+    - "8091:8080"
+  environment:
+    - NIFI_WEB_HTTP_PORT=8080
+    - NIFI_CLUSTER_IS_NODE=false
+  volumes:
+    - nifi_data:/opt/nifi/nifi-current/data
+    - nifi_conf:/opt/nifi/nifi-current/conf
+    - nifi_logs:/opt/nifi/nifi-current/logs
+
+airflow:
+  image: apache/airflow:2.7.1
+  container_name: airflow
+  depends_on:
+    - postgres
+    - redis
+  environment:
+    - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:postgres@postgres/airflow
+    - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:postgres@postgres/airflow
+    - AIRFLOW__CELERY__BROKER_URL=redis://:@redis:6379/0
+    - AIRFLOW__CORE__FERNET_KEY=''
+    - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION='true'
+    - AIRFLOW__CORE__LOAD_EXAMPLES='false'
+  volumes:
+    - airflow_dags:/opt/airflow/dags
+    - airflow_logs:/opt/airflow/logs
+    - airflow_plugins:/opt/airflow/plugins
+  ports:
+    - "8092:8080"
+
+sonarqube:
+  image: sonarqube:9.9.1-community
+  container_name: sonarqube
+  depends_on:
+    - postgres
+  ports:
+    - "9000:9000"
+  environment:
+    - sonar.jdbc.url=jdbc:postgresql://postgres:5432/sonar
+    - sonar.jdbc.username=postgres
+    - sonar.jdbc.password=postgres
+  volumes:
+    - sonarqube_data:/opt/sonarqube/data
+    - sonarqube_extensions:/opt/sonarqube/extensions
+    - sonarqube_logs:/opt/sonarqube/logs
+
+nexus:
+  image: sonatype/nexus3:3.58.1
+  container_name: nexus
+  ports:
+    - "8081:8081"
+  volumes:
+    - nexus_data:/nexus-data

@@ -1,0 +1,3 @@
+com\ironsoftware\datapipelineservice\DataPipelineServiceApplication.class
+com\ironsoftware\datapipeline\service\StreamProcessingService.class
+com\ironsoftware\datapipeline\config\KafkaStreamsConfig.class

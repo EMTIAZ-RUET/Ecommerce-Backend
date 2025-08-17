@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  ELASTICSEARCH_HOST: "elasticsearch"
+  ELASTICSEARCH_PORT: "9200"
+  ZIPKIN_BASE_URL: "http://zipkin:9411"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+type: Opaque
+data:
+  POSTGRES_USER: cG9zdGdyZXM= # postgres
+  POSTGRES_PASSWORD: cG9zdGdyZXM= # postgres
+  JWT_SECRET: eW91ci0yNTYtYml0LXNlY3JldC1rZXktaGVyZQ== # your-256-bit-secret-key-here
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

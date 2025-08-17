@@ -1,0 +1,65 @@
+server:
+  port: 8096
+
+spring:
+  application:
+    name: backup-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/backup_service
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+backup:
+  s3:
+    bucket: iron-software-backups
+  local:
+    path: /data/backups
+  schedule:
+    full: "0 0 1 * * ?" # Daily at 1 AM
+    incremental: "0 0 */4 * * ?" # Every 4 hours
+  retention:
+    full:
+      days: 30
+    incremental:
+      days: 7
+  verification:
+    enabled: true
+    schedule: "0 0 3 * * ?" # Daily at 3 AM
+
+aws:
+  access:
+    key: ${AWS_ACCESS_KEY_ID}
+  secret:
+    key: ${AWS_SECRET_ACCESS_KEY}
+  region: ${AWS_REGION:us-east-1}
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  level:
+    root: INFO
+    com.ironsoftware: DEBUG

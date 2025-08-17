@@ -1,0 +1,4 @@
+com\ironsoftware\reviewservice\model\Review$ReviewBuilder.class
+com\ironsoftware\reviewservice\model\ReviewStatus.class
+com\ironsoftware\reviewservice\ReviewServiceApplication.class
+com\ironsoftware\reviewservice\model\Review.class

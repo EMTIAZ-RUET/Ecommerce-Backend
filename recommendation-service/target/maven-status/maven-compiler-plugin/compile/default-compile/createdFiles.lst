@@ -1,0 +1,14 @@
+com\ironsoftware\recommendationservice\config\ModelConfig.class
+com\ironsoftware\recommendationservice\service\RecommendationService.class
+com\ironsoftware\recommendationservice\RecommendationServiceApplication.class
+com\ironsoftware\recommendationservice\model\Recommendation$RecommendationBuilder.class
+com\ironsoftware\recommendationservice\model\RecommendationType.class
+com\ironsoftware\recommendationservice\repository\UserPreferenceRepository.class
+com\ironsoftware\recommendationservice\config\SparkConfig.class
+com\ironsoftware\recommendationservice\model\UserPreference.class
+com\ironsoftware\recommendationservice\controller\RecommendationController.class
+com\ironsoftware\recommendationservice\dto\ProductRecommendationDto.class
+com\ironsoftware\recommendationservice\service\ModelTrainingService.class
+com\ironsoftware\recommendationservice\model\UserPreference$UserPreferenceBuilder.class
+com\ironsoftware\recommendationservice\dto\ProductRecommendationDto$ProductRecommendationDtoBuilder.class
+com\ironsoftware\recommendationservice\model\Recommendation.class

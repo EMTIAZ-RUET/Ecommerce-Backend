@@ -1,0 +1,10 @@
+com\ironsoftware\notification\model\Notification.class
+com\ironsoftware\notification\model\NotificationChannel.class
+com\ironsoftware\notification\websocket\WebSocketNotificationHandler.class
+com\ironsoftware\notification\model\NotificationStatus.class
+com\ironsoftware\notification\model\NotificationMessage$NotificationType.class
+com\ironsoftware\notification\model\NotificationMessage.class
+com\ironsoftware\notification\model\NotificationType.class
+com\ironsoftware\notification\model\Notification$NotificationBuilder.class
+com\ironsoftware\notification\model\NotificationMessage$NotificationMessageBuilder.class
+com\ironsoftware\notification\websocket\WebSocketConfig.class

@@ -1,0 +1,7 @@
+com\ironsoftware\backupservice\model\BackupStatus.class
+com\ironsoftware\backup\service\BackupService.class
+com\ironsoftware\backupservice\model\BackupType.class
+com\ironsoftware\backupservice\BackupServiceApplication.class
+com\ironsoftware\backupservice\model\BackupJob.class
+com\ironsoftware\backupservice\model\BackupJob$BackupJobBuilder.class
+com\ironsoftware\backup\config\AwsConfig.class

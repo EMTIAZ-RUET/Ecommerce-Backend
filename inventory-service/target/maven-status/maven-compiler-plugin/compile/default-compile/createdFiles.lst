@@ -1,0 +1,10 @@
+com\ironsoftware\inventoryservice\service\InventoryService.class
+com\ironsoftware\inventoryservice\dto\InventoryResponse.class
+com\ironsoftware\inventoryservice\model\InventoryItem$InventoryItemBuilder.class
+com\ironsoftware\inventoryservice\model\InventoryStatus.class
+com\ironsoftware\inventoryservice\controller\InventoryController.class
+com\ironsoftware\inventoryservice\dto\InventoryResponse$InventoryResponseBuilder.class
+com\ironsoftware\inventoryservice\InventoryServiceApplication.class
+com\ironsoftware\inventoryservice\config\CacheConfig.class
+com\ironsoftware\inventoryservice\model\InventoryItem.class
+com\ironsoftware\inventoryservice\repository\InventoryRepository.class

@@ -1,0 +1,3 @@
+com\ironsoftware\monitoringservice\model\MetricData.class
+com\ironsoftware\monitoringservice\model\MetricData$MetricDataBuilder.class
+com\ironsoftware\monitoringservice\MonitoringServiceApplication.class

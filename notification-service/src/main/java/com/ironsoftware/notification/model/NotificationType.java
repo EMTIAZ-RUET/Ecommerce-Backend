@@ -1,0 +1,16 @@
+package com.ironsoftware.notification.model;
+
+public enum NotificationType {
+    ORDER_CONFIRMATION,
+    ORDER_SHIPPED,
+    ORDER_DELIVERED,
+    PAYMENT_SUCCESS,
+    PAYMENT_FAILED,
+    INVENTORY_LOW,
+    PRICE_DROP,
+    PROMOTIONAL,
+    SYSTEM_ALERT,
+    SECURITY_ALERT,
+    ACCOUNT_VERIFICATION,
+    PASSWORD_RESET
+}

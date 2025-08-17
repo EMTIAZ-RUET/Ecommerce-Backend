@@ -1,0 +1,4 @@
+com\ironsoftware\loggingservice\LoggingServiceApplication.class
+com\ironsoftware\loggingservice\model\LogEntry$LogEntryBuilder.class
+com\ironsoftware\loggingservice\model\LogEntry.class
+com\ironsoftware\loggingservice\model\LogLevel.class

@@ -1,0 +1,6 @@
+com\ironsoftware\reportingservice\ReportingServiceApplication.class
+com\ironsoftware\reportingservice\model\ReportType.class
+com\ironsoftware\reportingservice\model\Report.class
+com\ironsoftware\reportingservice\model\ReportFormat.class
+com\ironsoftware\reportingservice\model\ReportStatus.class
+com\ironsoftware\reportingservice\model\Report$ReportBuilder.class

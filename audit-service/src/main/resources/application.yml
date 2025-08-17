@@ -1,0 +1,59 @@
+server:
+  port: 8095
+
+spring:
+  application:
+    name: audit-service
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/audit_service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: audit-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+
+audit:
+  retention:
+    days: 365
+  archival:
+    enabled: true
+    schedule: "0 0 1 * * ?" # Daily at 1 AM
+    storage:
+      type: s3
+      bucket: audit-logs-archive
+  compliance:
+    reports:
+      enabled: true
+      schedule: "0 0 0 * * SUN" # Weekly on Sunday
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  level:
+    root: INFO
+    com.ironsoftware: DEBUG
