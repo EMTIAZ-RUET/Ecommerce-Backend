@@ -209,6 +209,20 @@ sequenceDiagram
 - **Resilience**: Short‑lived tokens, refresh flow, clock skew tolerance
 
 ---
+```mermaid
+sequenceDiagram
+  autonumber
+  actor CL as Client
+  participant GW as API Gateway
+  participant AU as Auth Service
+  CL->>GW: POST /api/auth/login
+  GW->>AU: Validate credentials
+  AU-->>GW: 200 JWT({sub, roles, exp})
+  GW-->>CL: JWT
+  note over GW,AU: GW validates JWT on all requests (roles/claims)
+```
+
+---
 
 ### 📦 **Product Service** `Port: 8083`
 **Purpose**: Product catalog and inventory management
@@ -292,6 +306,23 @@ sequenceDiagram
 - **Resilience**: Optimistic updates; TTL expiration; debounce stock checks
 
 ---
+```mermaid
+sequenceDiagram
+  autonumber
+  participant CT as Cart
+  participant PR as Product
+  participant IV as Inventory
+  participant RC as Recommendation
+  CT->>PR: GET product price/details
+  CT->>IV: Check stock (sku, qty)
+  alt In stock
+    CT-->>RC: Publish ItemAddedToCart
+  else Out of stock
+    CT-->>CT: Reject add/update
+  end
+```
+
+---
 
 ### 📋 **Order Service** `Port: 8086`
 **Purpose**: Complete order lifecycle management
@@ -310,6 +341,28 @@ sequenceDiagram
 - **Calls**: `Payment` (authorize/capture/refund), `Inventory` (reserve/commit/release), `Delivery` (shipment)
 - **Publishes (Kafka)**: `Order*` for `Notification`, `Analytics`, `Audit`
 - **Resilience**: Saga orchestration; compensations on failure (release stock, refund)
+
+---
+```mermaid
+sequenceDiagram
+  autonumber
+  participant OR as Order
+  participant IV as Inventory
+  participant PM as Payment
+  participant DV as Delivery
+  OR->>IV: Reserve(items)
+  IV-->>OR: reservationId
+  OR->>PM: Authorize(amount)
+  PM-->>OR: PaymentProcessed | PaymentFailed
+  alt Success
+    OR->>IV: Commit(reservationId)
+    OR->>DV: Create shipment
+    OR-->>OR: Publish order-confirmed
+  else Failure
+    OR->>IV: Release(reservationId)
+    OR-->>OR: Publish order-cancelled
+  end
+```
 
 ---
 
@@ -362,6 +415,19 @@ sequenceDiagram
 - **Resilience**: Outbox for webhooks; retry with backoff; DLQ for failed updates
 
 ---
+```mermaid
+sequenceDiagram
+  autonumber
+  participant OR as Order
+  participant DV as Delivery
+  participant NT as Notification
+  OR-->>DV: order-confirmed
+  DV->>DV: Create shipment (carrier API)
+  DV-->>OR: ShipmentCreated/Dispatched
+  DV-->>NT: Delivery updates (events)
+```
+
+---
 
 ### 📧 **Notification Service** `Port: 8089`
 **Purpose**: Multi-channel messaging (email, SMS, push)
@@ -408,6 +474,15 @@ flowchart LR
 - **Resilience**: Content moderation queue; anti‑abuse throttling
 
 ---
+```mermaid
+flowchart LR
+  RV[Review] -->|Create/Update| EV{Emit Events}
+  EV --> NT[Notification]
+  RV -->|Fetch| US[User]
+  RV -->|Fetch| PR[Product]
+```
+
+---
 
 ### 🔍 **Search Service** `Port: 8091`
 **Purpose**: Full-text and faceted product search
@@ -425,6 +500,14 @@ flowchart LR
 - **REST (via Gateway)**: `http://localhost:8080/api/search/**`
 - **Consumes (Kafka)**: `Product*` events to reindex
 - **Resilience**: Bulk indexing with retries; circuit breaker on ES
+
+---
+```mermaid
+flowchart LR
+  PR[Product Events] -->|Kafka| SR[Search Indexer]
+  SR --> ES[(Elasticsearch)]
+  Client -->|/api/search| SR
+```
 
 ---
 
@@ -446,6 +529,14 @@ flowchart LR
 - **Resilience**: Model versioning; fallback to popular items
 
 ---
+```mermaid
+flowchart LR
+  EV[Orders/Cart/Product/User Events] --> RC[Recommendation]
+  RC --> FEED[Personalized Feed]
+  Client -->|/api/recommendations| RC
+```
+
+---
 
 ### 📊 **Analytics Service** `Port: 8093`
 **Purpose**: Real-time business metrics and dashboards
@@ -463,6 +554,14 @@ flowchart LR
 - **REST (via Gateway)**: `http://localhost:8080/api/analytics/**`
 - **Consumes**: Streams from `Data Pipeline`; exposes aggregates to `Reporting`
 - **Resilience**: Exactly‑once semantics with Kafka Streams; replayable sinks
+
+---
+```mermaid
+flowchart LR
+  DP[Data Pipeline Streams] --> AN[Analytics Aggregator]
+  AN --> RP[Reporting]
+  Client -->|/api/analytics| AN
+```
 
 ---
 
@@ -484,6 +583,26 @@ flowchart LR
 - **Resilience**: Rate limiting, retries, circuit breakers, tracing
 
 ---
+```mermaid
+sequenceDiagram
+  autonumber
+  participant CL as Client
+  participant GW as API Gateway
+  participant AU as Auth
+  participant SVC as Target Service
+  CL->>GW: /api/<service>/...
+  GW->>AU: Validate JWT (filter)
+  AU-->>GW: OK/Forbidden
+  alt Authorized
+    GW->>SVC: Proxy request
+    SVC-->>GW: Response
+    GW-->>CL: Response
+  else Rejected
+    GW-->>CL: 401/403
+  end
+```
+
+---
 
 ### 🌐 **Service Registry** `Port: 8761`
 **Purpose**: Service discovery
@@ -496,6 +615,15 @@ flowchart LR
 **Interactions**:
 - **Ingress**: Service registrations
 - **Egress**: Service lookup by clients/Gateway
+
+---
+```mermaid
+flowchart LR
+  SVC1[Service A] --> RG[Eureka]
+  SVC2[Service B] --> RG
+  GW[Gateway] -->|Discover| RG
+  SVC1 & SVC2 -->|Discover peers| RG
+```
 
 ---
 
@@ -512,6 +640,17 @@ flowchart LR
 - **Resilience**: Cached config; fallback defaults
 
 ---
+```mermaid
+sequenceDiagram
+  autonumber
+  participant CF as Config Server
+  participant SV as Service
+  SV->>CF: GET config on startup
+  CF-->>SV: application.yml (profile)
+  SV-->>CF: /actuator/refresh (via Bus)
+```
+
+---
 
 ### 📡 **Monitoring Service** `Port: 8094`
 **Purpose**: System-wide health and SLO tracking
@@ -524,6 +663,14 @@ flowchart LR
 **Interactions**:
 - **Ingress**: Scrapes `/actuator/prometheus`, receives traces/logs
 - **Resilience**: Backpressure; sampling
+
+---
+```mermaid
+flowchart LR
+  SVC[Services] --> MN[Monitoring]
+  MN --> Dash[Dashboards]
+  MN --> Alerts[Alerts]
+```
 
 ---
 
@@ -540,6 +687,14 @@ flowchart LR
 - **Egress**: ES/Kibana
 
 ---
+```mermaid
+flowchart LR
+  SVC[Services] -->|Filebeat/Fluentd| LG[Logging]
+  LG --> ES[(Elasticsearch)]
+  ES --> KB[Kibana]
+```
+
+---
 
 ### 📈 **Reporting Service** `Port: 8096`
 **Purpose**: Operational and business reports
@@ -552,6 +707,13 @@ flowchart LR
 **Interactions**:
 - **REST (via Gateway)**: `http://localhost:8080/api/reports/**`
 - **Consumes**: Aggregates from `Analytics`
+
+---
+```mermaid
+flowchart LR
+  AN[Analytics] --> RP[Reporting]
+  Client -->|/api/reports| RP
+```
 
 ---
 
@@ -570,6 +732,13 @@ flowchart LR
 - **REST (via Gateway)**: Browse/search audit trails
 
 ---
+```mermaid
+flowchart LR
+  EV[Domain Events] --> AU[Audit Store]
+  Client -->|Browse/Search| AU
+```
+
+---
 
 ### 💾 **Backup Service** `Port: 8098`
 **Purpose**: Automated backups and restores
@@ -582,6 +751,13 @@ flowchart LR
 **Interactions**:
 - **Ingress**: Schedulers trigger backups
 - **Egress**: Object storage
+
+---
+```mermaid
+flowchart LR
+  SC[Scheduler] --> BK[Backup]
+  BK --> S3[(Object Storage)]
+```
 
 ---
 
@@ -598,6 +774,14 @@ flowchart LR
 - **Triggers**: Backups, report generation, reindexing
 
 ---
+```mermaid
+flowchart LR
+  SC[Scheduler] -->|Cron| BK[Backup]
+  SC --> RP[Reporting]
+  SC --> SR[Search Reindex]
+```
+
+---
 
 ### 🌊 **Data Pipeline Service** `Port: 8100`
 **Purpose**: Stream ingestion, transformation, and routing
@@ -610,6 +794,14 @@ flowchart LR
 **Interactions**:
 - **Consumes**: All business topics; transforms and sinks to `Analytics/Reporting`
 - **Resilience**: Exactly‑once processing; schema registry validation
+
+---
+```mermaid
+flowchart LR
+  EV[Business Topics] --> DP[Data Pipeline]
+  DP --> AN[Analytics]
+  DP --> RP[Reporting]
+```
 
 ---
 
@@ -625,8 +817,162 @@ flowchart LR
 - **Used by**: All services; guarantees consistent contracts
 
 ---
+```mermaid
+flowchart LR
+  CL[Common Library] --> US[User]
+  CL --> PR[Product]
+  CL --> OR[Order]
+  CL --> PM[Payment]
+  CL --> DV[Delivery]
+  CL --> Others[All Services]
+```
+
+---
 
 ## 🔄 Service Interactions
+
+### 📋 Quick Interaction Matrix
+
+| Service | REST via Gateway | Publishes (Kafka) | Consumes (Kafka) |
+|---|---|---|---|
+| User | /api/users/** | UserRegistered, UserProfileUpdated, UserDeleted | — |
+| Auth | /api/auth/** | UserAuthenticated, LoginFailed | — |
+| Product | /api/products/** | ProductCreated/Updated/Deleted, PriceChanged | — |
+| Inventory | /api/inventory/** | InventoryUpdated, LowStockAlert | order-confirmed, order-cancelled |
+| Cart | /api/cart/** | Cart* | — |
+| Order | /api/orders/** | order-created, order-confirmed, order-cancelled | payment-events |
+| Payment | /api/payments/** | payment-events (processed/failed/refund) | — |
+| Delivery | /api/delivery/** | ShipmentCreated/Dispatched/Completed, ReturnInitiated | order-confirmed |
+| Notification | /api/notifications/** | — | Order*, Payment*, Delivery*, UserRegistered |
+| Review | /api/reviews/** | ReviewCreated/Updated/Flagged | — |
+| Search | /api/search/** | — | Product* |
+| Recommendation | /api/recommendations/** | — | Order*, Cart*, Product*, User* |
+| Analytics | /api/analytics/** | — | All via Data Pipeline |
+| Reporting | /api/reports/** | — | Aggregates from Analytics |
+| API Gateway | /api/<service>/** | — | — |
+| Service Registry | n/a | — | — |
+| Config Server | n/a | — | — |
+| Monitoring | n/a | — | Metrics/Traces/Logs |
+| Logging | n/a | — | Logs from services |
+| Audit | n/a | — | All significant domain events |
+| Backup | n/a | — | Scheduler triggers |
+| Scheduler | n/a | Maintenance events | — |
+| Data Pipeline | /api/pipeline/** | Transformed streams | All business topics |
+| Common Library | n/a | — | — |
+
+### 🌐 End-to-End All-Services Sequence (Full Picture)
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant CL as Client
+  participant GW as API Gateway
+  participant RG as Service Registry
+  participant CF as Config Server
+  participant LG as Logging
+  participant MN as Monitoring
+  participant US as User
+  participant AS as Auth
+  participant PR as Product
+  participant CT as Cart
+  participant IV as Inventory
+  participant OR as Order
+  participant PM as Payment
+  participant DV as Delivery
+  participant NT as Notification
+  participant RV as Review
+  participant SR as Search
+  participant RC as Recommendation
+  participant AN as Analytics
+  participant RP as Reporting
+  participant AD as Audit
+  participant BK as Backup
+  participant SC as Scheduler
+  participant DP as Data Pipeline
+
+  note over GW,CF: Platform bootstraps (CF config, RG discovery, GW routes). LG/MN collect logs/metrics throughout.
+
+  CL->>GW: 1) POST /api/users/register
+  GW->>US: Create user
+  US-->>AD: Event UserRegistered
+  US-->>NT: Event UserRegistered (welcome email)
+  US-->>AN: Event UserRegistered (cohort)
+
+  CL->>GW: 2) POST /api/auth/login
+  GW->>AS: Authenticate, issue JWT
+  AS-->>AD: Event UserAuthenticated
+
+  CL->>GW: 3) GET /api/products?search=shoes
+  GW->>PR: Query products
+  PR-->>DP: Event ProductQueried (optional)
+  PR-->>SR: Event ProductUpdated (index maintenance, if any)
+  SR-->>PR: Search results (if delegated)
+  PR-->>RC: Event ProductSignals (model features)
+
+  CL->>GW: 4) POST /api/cart/items
+  GW->>CT: Add to cart
+  CT->>PR: Get product details/price
+  CT->>IV: Check availability
+  CT-->>DP: Event CartUpdated
+  CT-->>RC: Event CartSignals
+
+  CL->>GW: 5) POST /api/orders
+  GW->>OR: Create order (PENDING)
+  OR->>US: Validate user
+  OR->>PR: Fetch product details
+  OR->>IV: Reserve stock
+  IV-->>OR: reservationId
+  OR-->>AD: Event order-created
+  OR-->>DP: Event order-created
+  OR-->>NT: Event order-created
+
+  CL->>GW: 6) PUT /api/orders/{id}/confirm?paymentMethodId=pm_abc
+  GW->>OR: Confirm order
+  OR->>PM: Authorize/Capture payment
+  PM-->>OR: PaymentProcessed | PaymentFailed
+  PM-->>DP: payment-events
+  PM-->>AD: payment-events
+  OR-->>IV: Commit or Release reservation
+  OR-->>AD: order-confirmed | order-cancelled
+  OR-->>DP: order-confirmed | order-cancelled
+  OR-->>NT: order-confirmed | order-cancelled
+
+  alt On confirmation
+    OR->>DV: Create shipment
+    DV-->>OR: ShipmentCreated/Dispatched
+    DV-->>NT: Delivery updates events
+    DV-->>DP: Delivery events
+  else On cancellation
+    OR->>PM: Refund (if needed)
+    PM-->>OR: RefundIssued
+    OR->>IV: Release reservation
+  end
+
+  %% Post-transaction analytics/reporting
+  DP-->>AN: Stream all domain events
+  AN-->>RP: Aggregated cubes
+  RP->>GW: Expose reports via /api/reports
+
+  %% Cross-cutting
+  par Observability
+    GW-->>LG: Access logs
+    GW-->>MN: Request metrics/traces
+    OR-->>LG: Service logs
+    OR-->>MN: Business metrics/traces
+    PM-->>LG: Logs; PM-->>MN: Metrics
+  and Config/Discovery
+    US->>CF: Fetch config on startup
+    US->>RG: Register instance
+    OR->>CF: Fetch config on startup
+    OR->>RG: Register instance
+    PM->>CF: Fetch config; PM->>RG: Register
+  end
+
+  %% Periodic operations
+  SC-->>BK: Trigger scheduled backups
+  BK-->>LG: Backup logs
+  BK-->>MN: Backup metrics
+```
 
 ### 🛒 **Complete E-Commerce Workflow**
 

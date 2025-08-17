@@ -376,6 +376,125 @@ Domain services:
 
 ---
 
+## 2b) Per‑Service Interactions (REST + Kafka)
+
+Below mirrors the README Interactions blocks for quick lookup.
+
+### Core Services
+- **User**
+  - REST: `/api/users/**`
+  - Publishes: `UserRegistered`, `UserProfileUpdated`, `UserDeleted`
+  - Consumes: —
+
+- **Auth**
+  - REST: `/api/auth/**`
+  - Publishes: `UserAuthenticated`, `LoginFailed`
+  - Consumes: —
+
+- **Product**
+  - REST: `/api/products/**`
+  - Publishes: `ProductCreated`, `ProductUpdated`, `ProductDeleted`, `PriceChanged`
+  - Consumes: —
+
+- **Inventory**
+  - REST: `/api/inventory/**`
+  - Publishes: `InventoryUpdated`, `LowStockAlert`
+  - Consumes: `order-confirmed`, `order-cancelled`
+
+- **Cart**
+  - REST: `/api/cart/**`
+  - Publishes: `Cart*`
+  - Consumes: —
+
+- **Order**
+  - REST: `/api/orders/**`
+  - Publishes: `order-created`, `order-confirmed`, `order-cancelled`
+  - Consumes: `payment-events`
+
+- **Payment**
+  - REST: `/api/payments/**`
+  - Publishes: `payment-events` (processed/failed/refund)
+  - Consumes: —
+
+### Advanced Services
+- **Delivery**
+  - REST: `/api/delivery/**`
+  - Publishes: `ShipmentCreated`, `ShipmentDispatched`, `DeliveryCompleted`, `ReturnInitiated`
+  - Consumes: `order-confirmed`
+
+- **Notification**
+  - REST: `/api/notifications/**`
+  - Publishes: —
+  - Consumes: `Order*`, `Payment*`, `Delivery*`, `UserRegistered`
+
+- **Review**
+  - REST: `/api/reviews/**`
+  - Publishes: `ReviewCreated`, `ReviewUpdated`, `ReviewFlagged`
+  - Consumes: —
+
+- **Search**
+  - REST: `/api/search/**`
+  - Publishes: —
+  - Consumes: `Product*`
+
+- **Recommendation**
+  - REST: `/api/recommendations/**`
+  - Publishes: —
+  - Consumes: `Order*`, `Cart*`, `Product*`, `User*`
+
+- **Analytics**
+  - REST: `/api/analytics/**`
+  - Publishes: —
+  - Consumes: All business events via Data Pipeline
+
+- **Reporting**
+  - REST: `/api/reports/**`
+  - Publishes: —
+  - Consumes: Aggregates from Analytics
+
+### Platform & Infrastructure
+- **API Gateway**
+  - REST ingress: `/api/<service>/**`
+  - Publishes/Consumes: —
+
+- **Service Registry (Eureka)**
+  - REST: Dashboard only
+  - Publishes/Consumes: —
+
+- **Config Server**
+  - REST: `/actuator/refresh` (via Bus), config endpoints
+  - Publishes/Consumes: Spring Cloud Bus events
+
+- **Monitoring**
+  - REST: scrapes `/actuator/prometheus`
+  - Consumes: Metrics, traces, logs
+
+- **Logging**
+  - Ingests: Logs from services
+  - Egress: Elasticsearch/Kibana
+
+- **Audit**
+  - REST: browse/search trail
+  - Consumes: All significant domain events (immutable store)
+
+- **Backup**
+  - Triggers: Scheduler
+  - Egress: Object storage
+
+- **Scheduler**
+  - Publishes: Maintenance/cleanup events
+  - Triggers: Backups, report generation, reindexing
+
+- **Data Pipeline**
+  - REST: `/api/pipeline/**`
+  - Publishes: Transformed streams
+  - Consumes: All business topics
+
+- **Common Library**
+  - Used by: All services (DTOs, events, security, errors)
+
+---
+
 ## 3) Startup Order
 
 1. Infrastructure: `start-infrastructure.ps1` (or `docker-compose-infra.yml`)
