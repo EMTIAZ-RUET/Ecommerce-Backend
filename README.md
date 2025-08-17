@@ -12,7 +12,9 @@
 
  *Featuring event-driven architecture, real-time processing, and enterprise-grade scalability*
 
- </div>
+  </div>
+
+</details>
 
  <div align="center">
  
@@ -530,8 +532,15 @@ sequenceDiagram
 ---
 
  ## 🗺️ Visualizations
- 
- <div align="center">
+
+> Note: GitHub sanitizes inline SVG. If you see raw `<style>`/`<title>` text, use the static image below or open the repo in an IDE/local preview.
+
+![Service Map (static)](docs/images/service-map-root.svg)
+
+<details>
+  <summary><strong>Interactive SVG (works locally/IDE)</strong></summary>
+
+<div align="center">
  
  <svg width="980" height="420" viewBox="0 0 980 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Service Map">
    <style>
