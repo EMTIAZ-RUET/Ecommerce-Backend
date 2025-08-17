@@ -170,10 +170,28 @@ PUT    /api/users/{id}              # Update user profile
 DELETE /api/users/{id}              # Delete user account
 ```
 
----
+**Interactions**:
+- **REST (via Gateway)**: Exposed at `http://localhost:8080/api/users/**`
+- **Publishes (Kafka)**: `UserRegistered`, `UserProfileUpdated`, `UserDeleted`
+- **Consumed by**: `Notification` (welcome, password reset), `Analytics` (user cohorts), `Audit` (immutably logs), `Recommendation` (profile signals)
+- **Resilience**: Idempotent registration; transactional outbox for event publication; PII redaction before events
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant US as User Service
+  participant NS as Notification Service
+  participant AS as Analytics Service
+  participant AU as Audit Service
+  participant RS as Recommendation Service
+  US->>NS: Publish UserRegistered
+  US->>AS: Publish UserProfileUpdated
+  US->>AU: Publish UserDeleted
+  US->>RS: Publish UserRegistered
+```
 
 ### 🔐 **Auth Service** `Port: 8082`
-**Purpose**: Centralized authentication and authorization
+**Purpose**: Centralized authentication and authorization  
 
 **Key Features**:
 - 🎫 JWT token generation and validation
@@ -183,6 +201,12 @@ DELETE /api/users/{id}              # Delete user account
 - 📱 Multi-factor authentication
 
 **Integration**: Keycloak | **Events**: `UserAuthenticated`, `TokenRefreshed`, `LoginFailed`
+
+**Interactions**:
+- **REST (via Gateway)**: `http://localhost:8080/api/auth/**`
+- **Used by**: Gateway filter validates JWT on inbound requests; services verify roles/claims
+- **Publishes (Kafka)**: `UserAuthenticated`, `LoginFailed` (optional)
+- **Resilience**: Short‑lived tokens, refresh flow, clock skew tolerance
 
 ---
 
@@ -198,6 +222,24 @@ DELETE /api/users/{id}              # Delete user account
 
 **Database**: MongoDB | **Events**: `ProductCreated`, `ProductUpdated`, `ProductDeleted`, `PriceChanged`
 
+**Interactions**:
+- **REST (via Gateway)**: `http://localhost:8080/api/products/**`
+- **Publishes (Kafka)**: `Product*`, `PriceChanged`
+- **Consumed by**: `Search` (reindex), `Recommendation` (model updates), `Analytics/Reporting` (facts), `Cart` (price recalculation)
+- **Resilience**: Versioned documents; eventual consistency to Search/Recommendations via events
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant PR as Product
+  participant DP as Data Pipeline
+  participant SR as Search
+  participant RC as Recommendation
+  PR->>DP: Publish ProductUpdated
+  DP-->>SR: Trigger reindex
+  DP-->>RC: Update features
+```
+
 ---
 
 ### 📊 **Inventory Service** `Port: 8084`
@@ -211,6 +253,23 @@ DELETE /api/users/{id}              # Delete user account
 - 📊 Inventory analytics
 
 **Database**: PostgreSQL | **Events**: `InventoryUpdated`, `LowStockAlert`, `OutOfStock`
+
+**Interactions**:
+- **REST (via Gateway)**: `http://localhost:8080/api/inventory/**`
+- **Consumed by/Calls**: Called by `Cart` for availability; called by `Order` to reserve/commit/release
+- **Publishes (Kafka)**: `InventoryUpdated`, `LowStockAlert`
+- **Resilience**: Reservation tokens; time‑boxed holds; idempotent commit/release
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant OS as Order
+  participant IV as Inventory
+  OS->>IV: POST /reserve (sku, qty)
+  IV-->>OS: 201 Reserved(reservationId)
+  OS->>IV: POST /commit {reservationId}
+  IV-->>OS: 200 Committed
+```
 
 ---
 
@@ -226,6 +285,12 @@ DELETE /api/users/{id}              # Delete user account
 
 **Database**: Redis | **Events**: `ItemAddedToCart`, `ItemRemovedFromCart`, `CartAbandoned`
 
+**Interactions**:
+- **REST (via Gateway)**: `http://localhost:8080/api/cart/**`
+- **Calls**: `Inventory` for stock check; enriches with `Product` price
+- **Publishes (Kafka)**: `Cart*` for analytics and recommendations
+- **Resilience**: Optimistic updates; TTL expiration; debounce stock checks
+
 ---
 
 ### 📋 **Order Service** `Port: 8086`
@@ -239,6 +304,12 @@ DELETE /api/users/{id}              # Delete user account
 - 📈 Order analytics
 
 **Database**: PostgreSQL | **Events**: `OrderCreated`, `OrderUpdated`, `OrderCancelled`, `OrderCompleted`
+
+**Interactions**:
+- **REST (via Gateway)**: `http://localhost:8080/api/orders/**`
+- **Calls**: `Payment` (authorize/capture/refund), `Inventory` (reserve/commit/release), `Delivery` (shipment)
+- **Publishes (Kafka)**: `Order*` for `Notification`, `Analytics`, `Audit`
+- **Resilience**: Saga orchestration; compensations on failure (release stock, refund)
 
 ---
 
@@ -255,6 +326,22 @@ DELETE /api/users/{id}              # Delete user account
 **Database**: PostgreSQL | **Integrations**: Stripe, PayPal, Square
 **Events**: `PaymentProcessed`, `PaymentFailed`, `RefundIssued`
 
+**Interactions**:
+- **REST (via Gateway)**: `http://localhost:8080/api/payments/**`
+- **Consumed by/Calls**: Called by `Order` for authorize/capture; emits events consumed by `Order` for state
+- **Resilience**: Idempotency keys; provider retries; webhook reconciliation
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant OS as Order
+  participant PS as Payment
+  OS->>PS: POST /authorize {orderId, amount}
+  PS-->>OS: PaymentProcessed | PaymentFailed
+  OS->>PS: POST /capture {paymentId}
+  PS-->>OS: PaymentProcessed
+```
+
 ---
 
 ### 🚛 **Delivery Service** `Port: 8088`
@@ -268,6 +355,11 @@ DELETE /api/users/{id}              # Delete user account
 - 🧭 Address validation
 
 **Database**: PostgreSQL | **Events**: `ShipmentCreated`, `ShipmentDispatched`, `DeliveryCompleted`, `ReturnInitiated`
+
+**Interactions**:
+- **REST (via Gateway)**: `http://localhost:8080/api/delivery/**`
+- **Consumed by/Calls**: Triggered by `OrderCompleted`; calls external carriers; updates `Order`
+- **Resilience**: Outbox for webhooks; retry with backoff; DLQ for failed updates
 
 ---
 
@@ -283,6 +375,19 @@ DELETE /api/users/{id}              # Delete user account
 
 **Integrations**: SendGrid, Twilio | **Events**: Consumes events from all business services
 
+**Interactions**:
+- **REST (via Gateway)**: `http://localhost:8080/api/notifications/**`
+- **Consumes (Kafka)**: `Order*`, `Payment*`, `Delivery*`, `UserRegistered`
+- **Resilience**: Exponential backoff; provider failover; DLQ and replays
+
+```mermaid
+flowchart LR
+  EV[Domain Events] -->|Kafka| NS[Notification]
+  NS --> Email
+  NS --> SMS
+  NS --> Push
+```
+
 ---
 
 ### ⭐ **Review Service** `Port: 8090`
@@ -296,6 +401,11 @@ DELETE /api/users/{id}              # Delete user account
 - 🔗 Links to products and users
 
 **Database**: PostgreSQL | **Events**: `ReviewCreated`, `ReviewUpdated`, `ReviewFlagged`
+
+**Interactions**:
+- **REST (via Gateway)**: `http://localhost:8080/api/reviews/**`
+- **Consumed by/Calls**: Enriches with `User` and `Product`; emits moderation events for `Notification`
+- **Resilience**: Content moderation queue; anti‑abuse throttling
 
 ---
 
@@ -311,6 +421,11 @@ DELETE /api/users/{id}              # Delete user account
 
 **Search**: Elasticsearch/OpenSearch | **Events**: Consumes `ProductCreated/Updated/Deleted`
 
+**Interactions**:
+- **REST (via Gateway)**: `http://localhost:8080/api/search/**`
+- **Consumes (Kafka)**: `Product*` events to reindex
+- **Resilience**: Bulk indexing with retries; circuit breaker on ES
+
 ---
 
 ### 🎯 **Recommendation Service** `Port: 8092`
@@ -324,6 +439,11 @@ DELETE /api/users/{id}              # Delete user account
 - 📊 CTR/conversion tracking
 
 **Database**: Redis/PostgreSQL | **Events**: Consumes from `Order`, `Cart`, `Product`, `User`
+
+**Interactions**:
+- **REST (via Gateway)**: `http://localhost:8080/api/recommendations/**`
+- **Consumes (Kafka)**: `Order*`, `Cart*`, `Product*`, `User*`
+- **Resilience**: Model versioning; fallback to popular items
 
 ---
 
@@ -339,6 +459,11 @@ DELETE /api/users/{id}              # Delete user account
 
 **Warehouse**: PostgreSQL/Parquet | **Events**: Consumes all business events via `Data Pipeline`
 
+**Interactions**:
+- **REST (via Gateway)**: `http://localhost:8080/api/analytics/**`
+- **Consumes**: Streams from `Data Pipeline`; exposes aggregates to `Reporting`
+- **Resilience**: Exactly‑once semantics with Kafka Streams; replayable sinks
+
 ---
 
 ### 🚪 **API Gateway** `Port: 8080`
@@ -353,6 +478,11 @@ DELETE /api/users/{id}              # Delete user account
 
 **Tech**: Spring Cloud Gateway | **Depends on**: `Service Registry`, `Auth`
 
+**Interactions**:
+- **Ingress**: All client traffic
+- **Egress**: Routes to services by path predicate `/api/<service>/**`
+- **Resilience**: Rate limiting, retries, circuit breakers, tracing
+
 ---
 
 ### 🌐 **Service Registry** `Port: 8761`
@@ -362,6 +492,10 @@ DELETE /api/users/{id}              # Delete user account
 - 🧭 Eureka registry and dashboard
 - 🔄 Heartbeat and instance health
 - ♻️ Self-healing via re-registration
+
+**Interactions**:
+- **Ingress**: Service registrations
+- **Egress**: Service lookup by clients/Gateway
 
 ---
 
@@ -373,6 +507,10 @@ DELETE /api/users/{id}              # Delete user account
 - 🔐 Encrypted secrets (Vault-ready)
 - 🔄 Dynamic refresh via Spring Cloud Bus
 
+**Interactions**:
+- **Ingress**: `/actuator/refresh` via Bus; clients bootstrap from Config
+- **Resilience**: Cached config; fallback defaults
+
 ---
 
 ### 📡 **Monitoring Service** `Port: 8094`
@@ -382,6 +520,10 @@ DELETE /api/users/{id}              # Delete user account
 - 📈 Prometheus metrics collection
 - 📊 Grafana dashboards
 - 🧵 Distributed tracing (Zipkin/OTel)
+
+**Interactions**:
+- **Ingress**: Scrapes `/actuator/prometheus`, receives traces/logs
+- **Resilience**: Backpressure; sampling
 
 ---
 
@@ -393,6 +535,10 @@ DELETE /api/users/{id}              # Delete user account
 - 🔎 Elasticsearch indexing
 - 📄 Kibana dashboards
 
+**Interactions**:
+- **Ingress**: Log shippers
+- **Egress**: ES/Kibana
+
 ---
 
 ### 📈 **Reporting Service** `Port: 8096`
@@ -402,6 +548,10 @@ DELETE /api/users/{id}              # Delete user account
 - 🗓️ Scheduled PDF/Excel reports
 - 🔍 Ad-hoc query endpoints
 - 🔐 Row-level security for reports
+
+**Interactions**:
+- **REST (via Gateway)**: `http://localhost:8080/api/reports/**`
+- **Consumes**: Aggregates from `Analytics`
 
 ---
 
@@ -415,6 +565,10 @@ DELETE /api/users/{id}              # Delete user account
 
 **Database**: PostgreSQL | **Events**: Consumes all significant domain events
 
+**Interactions**:
+- **Consumes (Kafka)**: All domain topics (immutable store)
+- **REST (via Gateway)**: Browse/search audit trails
+
 ---
 
 ### 💾 **Backup Service** `Port: 8098`
@@ -424,6 +578,10 @@ DELETE /api/users/{id}              # Delete user account
 - ☁️ Offsite backups to S3-compatible storage
 - ♻️ Retention policies and lifecycle rules
 - 🧪 Restore validation
+
+**Interactions**:
+- **Ingress**: Schedulers trigger backups
+- **Egress**: Object storage
 
 ---
 
@@ -435,6 +593,10 @@ DELETE /api/users/{id}              # Delete user account
 - 🔁 Retry and backoff policies
 - 📢 Publishes maintenance events
 
+**Interactions**:
+- **Publishes (Kafka)**: Maintenance/cleanup events
+- **Triggers**: Backups, report generation, reindexing
+
 ---
 
 ### 🌊 **Data Pipeline Service** `Port: 8100`
@@ -445,6 +607,10 @@ DELETE /api/users/{id}              # Delete user account
 - 🔄 ETL to analytics/reporting sinks
 - 🧹 PII scrubbing and schema validation
 
+**Interactions**:
+- **Consumes**: All business topics; transforms and sinks to `Analytics/Reporting`
+- **Resilience**: Exactly‑once processing; schema registry validation
+
 ---
 
 ### 🔧 **Common Library**
@@ -454,6 +620,9 @@ DELETE /api/users/{id}              # Delete user account
 - 🧱 Event schemas and headers
 - 🛡️ Security filters and JWT utilities
 - 🧰 Error handling and tracing helpers
+
+**Interactions**:
+- **Used by**: All services; guarantees consistent contracts
 
 ---
 
