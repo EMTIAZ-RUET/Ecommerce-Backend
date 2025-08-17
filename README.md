@@ -190,6 +190,31 @@ sequenceDiagram
   US->>RS: Publish UserRegistered
 ```
 
+#### Details
+- **Responsibilities**: Manage user identities, profiles, preferences; emit lifecycle events.
+- **Primary endpoints**: `/api/users/register`, `/api/users/{id}`, `/api/users/{id}/exists`
+- **Data model hints**: `User{id, email, roles[], status, createdAt}`
+- **Events purpose**: `UserRegistered` (onboard flows), `UserProfileUpdated` (sync projections), `UserDeleted` (GDPR cleanup)
+- **Dependencies**: Calls `Auth` for token flows (login via Gateway), consumed by `Notification`, `Analytics`, `Audit`, `Recommendation`.
+- **Auth/Roles**: Self-service endpoints open to `ANON` for register; profile ops require `USER`; admin ops require `ADMIN`.
+- **Resilience**: Transactional outbox for events; idempotent registration; PII redaction in events.
+- **Observability**: Key metrics `users.created.count`, `users.active.count`; logs redact sensitive fields.
+
+##### Quick Links
+- [API via Gateway](http://localhost:8080/api/users/)
+
+##### Example Kafka Payloads
+```json
+{
+  "eventType": "UserRegistered",
+  "userId": "b1b2c3d4",
+  "email": "alice@example.com",
+  "roles": ["USER"],
+  "timestamp": "2024-01-01T12:00:00Z",
+  "metadata": {"source": "user-service", "version": 1}
+}
+```
+
 ### 🔐 **Auth Service** `Port: 8082`
 **Purpose**: Centralized authentication and authorization  
 
@@ -220,6 +245,32 @@ sequenceDiagram
   AU-->>GW: 200 JWT({sub, roles, exp})
   GW-->>CL: JWT
   note over GW,AU: GW validates JWT on all requests (roles/claims)
+```
+
+#### Details
+- **Responsibilities**: Authentication (login, refresh), authorization (RBAC), token introspection.
+- **Primary endpoints**: `/api/auth/login`, `/api/auth/refresh`, `/api/auth/introspect`
+- **Token model**: JWT with `sub`, `roles`, `exp`, `iat`; refresh token TTL configurable.
+- **Events purpose**: `UserAuthenticated` (security analytics), `LoginFailed` (fraud signals).
+- **Dependencies**: Integrated at `API Gateway` filter; downstream services trust JWT and enforce roles.
+- **Security**: Rate limiting on login; MFA optional; clock-skew tolerant verification.
+- **Resilience**: Short‑lived access tokens; stateless; fallback to refresh; lockout after repeated failures.
+- **Observability**: Metrics `auth.login.success`, `auth.login.failure`, `jwt.validation.errors`.
+
+##### Quick Links
+- [API via Gateway](http://localhost:8080/api/auth/)
+
+##### Example Kafka Payloads
+```json
+{
+  "eventType": "UserAuthenticated",
+  "userId": "b1b2c3d4",
+  "roles": ["USER"],
+  "ip": "203.0.113.10",
+  "userAgent": "Mozilla/5.0",
+  "timestamp": "2024-01-01T12:03:00Z",
+  "metadata": {"source": "auth-service", "version": 1}
+}
 ```
 
 ---
@@ -254,6 +305,32 @@ sequenceDiagram
   DP-->>RC: Update features
 ```
 
+#### Details
+- **Responsibilities**: Authoritative product catalog (CRUD), pricing, categories, media metadata.
+- **Primary endpoints**: `/api/products`, `/api/products/{id}`, `/api/products/{id}/exists`
+- **Data model hints**: `Product{id, sku, title, price, currency, attributes{}, status}`
+- **Events purpose**: Drive Search reindex, Recommendation features, Analytics facts.
+- **Dependencies**: Consumed by `Cart` (price), `Order` (details), `Search` (index), `Recommendation`.
+- **Auth/Roles**: Read public; writes require `ADMIN/MERCHANT`.
+- **Resilience**: Versioned docs; outbox to Kafka; eventual consistency to indices.
+- **Observability**: Metrics `products.updated.count`, `products.price.change.count`.
+
+##### Quick Links
+- [API via Gateway](http://localhost:8080/api/products/)
+
+##### Example Kafka Payloads
+```json
+{
+  "eventType": "ProductUpdated",
+  "productId": "SKU-123",
+  "title": "Wireless Mouse",
+  "price": {"amount": 29.99, "currency": "USD"},
+  "attributes": {"color": "black"},
+  "timestamp": "2024-01-01T12:10:00Z",
+  "metadata": {"source": "product-service", "version": 3}
+}
+```
+
 ---
 
 ### 📊 **Inventory Service** `Port: 8084`
@@ -283,6 +360,31 @@ sequenceDiagram
   IV-->>OS: 201 Reserved(reservationId)
   OS->>IV: POST /commit {reservationId}
   IV-->>OS: 200 Committed
+```
+
+#### Details
+- **Responsibilities**: Track stock by SKU; reservations, commits, releases; low-stock alarms.
+- **Primary endpoints**: `/api/inventory/check`, `/api/inventory/reserve`, `/api/inventory/commit`, `/api/inventory/release`
+- **Data model hints**: `Inventory{sku, available, reserved, safetyStock}`; `Reservation{id, sku, qty, ttl}`
+- **Events purpose**: `InventoryUpdated` updates projections/analytics; `LowStockAlert` triggers reorders/alerts.
+- **Dependencies**: Called by `Order` and `Cart`; consumes `order-confirmed/cancelled`.
+- **Resilience**: Idempotent reservation tokens; TTL holds; commit/release guarantees.
+- **Observability**: Metrics `inventory.reserve.latency`, `inventory.lowstock.count`.
+
+##### Quick Links
+- [API via Gateway](http://localhost:8080/api/inventory/)
+
+##### Example Kafka Payloads
+```json
+{
+  "eventType": "InventoryUpdated",
+  "sku": "SKU-123",
+  "available": 120,
+  "reserved": 5,
+  "lowStock": false,
+  "timestamp": "2024-01-01T12:12:00Z",
+  "metadata": {"source": "inventory-service", "version": 2}
+}
 ```
 
 ---
@@ -320,6 +422,31 @@ sequenceDiagram
   else Out of stock
     CT-->>CT: Reject add/update
   end
+```
+
+#### Details
+- **Responsibilities**: Manage user carts; validate items; compute totals; prepare checkout.
+- **Primary endpoints**: `/api/cart`, `/api/cart/items`, `/api/cart/clear`
+- **Data model hints**: `Cart{userId, items[{sku, qty, unitPrice}], total}`
+- **Events purpose**: `Cart*` events feed Analytics and Recommendation.
+- **Dependencies**: Calls `Product` for price/details; `Inventory` for availability.
+- **Resilience**: Redis-backed TTL; optimistic updates; debounce stock checks.
+- **Observability**: Metrics `cart.item.added.count`, `cart.abandoned.count`.
+
+##### Quick Links
+- [API via Gateway](http://localhost:8080/api/cart/)
+
+##### Example Kafka Payloads
+```json
+{
+  "eventType": "ItemAddedToCart",
+  "userId": "b1b2c3d4",
+  "sku": "SKU-123",
+  "qty": 1,
+  "unitPrice": 29.99,
+  "timestamp": "2024-01-01T12:05:00Z",
+  "metadata": {"source": "cart-service", "version": 1}
+}
 ```
 
 ---
@@ -395,6 +522,33 @@ sequenceDiagram
   PS-->>OS: PaymentProcessed
 ```
 
+#### Details
+- **Responsibilities**: Authorize/capture/refund payments; reconcile webhooks; publish payment status.
+- **Primary endpoints**: `/api/payments` (authorize/capture/refund endpoints as per controller)
+- **Data model hints**: `Payment{id, orderId, amount, currency, status, provider, txnId}`
+- **Events purpose**: `PaymentProcessed/Failed/RefundIssued` synchronize `Order`, Analytics, Audit.
+- **Dependencies**: Called by `Order`; integrates with Stripe/PayPal; emits to Kafka.
+- **Security**: PCI-safe handling; secrets via `Config Server`.
+- **Resilience**: Idempotency keys; webhook retries; provider failover.
+- **Observability**: Metrics `payments.auth.success.rate`, `payments.latency.ms`, `refunds.count`.
+
+##### Quick Links
+- [API via Gateway](http://localhost:8080/api/payments/)
+
+##### Example Kafka Payloads
+```json
+{
+  "eventType": "PaymentProcessed",
+  "paymentId": "PAY-7788",
+  "orderId": "ORD-10001",
+  "amount": {"amount": 59.98, "currency": "USD"},
+  "provider": "stripe",
+  "status": "CAPTURED",
+  "timestamp": "2024-01-01T12:16:30Z",
+  "metadata": {"source": "payment-service", "version": 2}
+}
+```
+
 ---
 
 ### 🚛 **Delivery Service** `Port: 8088`
@@ -427,6 +581,32 @@ sequenceDiagram
   DV-->>NT: Delivery updates (events)
 ```
 
+#### Details
+- **Responsibilities**: Create and manage shipments; integrate with carriers; update delivery status.
+- **Primary endpoints**: `/api/delivery/shipments`, `/api/delivery/shipments/{id}`
+- **Data model hints**: `Shipment{id, orderId, carrier, tracking, status}`
+- **Events purpose**: `ShipmentCreated/Dispatched/DeliveryCompleted` inform `Order`, `Notification`, `Analytics`.
+- **Dependencies**: Triggered by `order-confirmed`; calls carrier APIs; updates `Order`.
+- **Resilience**: Outbox for webhooks to carriers; retry/backoff; DLQ for failed updates.
+- **Observability**: Metrics `shipment.created.count`, `delivery.latency.ms`.
+
+##### Quick Links
+- [API via Gateway](http://localhost:8080/api/delivery/)
+
+##### Example Kafka Payloads
+```json
+{
+  "eventType": "ShipmentCreated",
+  "shipmentId": "SHP-5678",
+  "orderId": "ORD-10001",
+  "carrier": "UPS",
+  "tracking": "1Z999",
+  "status": "CREATED",
+  "timestamp": "2024-01-01T12:20:00Z",
+  "metadata": {"source": "delivery-service", "version": 1}
+}
+```
+
 ---
 
 ### 📧 **Notification Service** `Port: 8089`
@@ -452,6 +632,32 @@ flowchart LR
   NS --> Email
   NS --> SMS
   NS --> Push
+```
+
+#### Details
+- **Responsibilities**: Send transactional and marketing messages via Email/SMS/Push.
+- **Primary endpoints**: `/api/notifications/send`, `/api/notifications/templates`
+- **Data model hints**: `Notification{id, channel, template, to, status, error}`
+- **Events purpose**: Consumes domain events to trigger user-facing communications.
+- **Dependencies**: Providers like SendGrid/Twilio; subscribes to `Order*`, `Payment*`, `Delivery*`, `UserRegistered`.
+- **Resilience**: Exponential backoff, provider failover, DLQ and replay.
+- **Observability**: Metrics `notifications.sent.count`, `notifications.bounce.count`.
+
+##### Quick Links
+- [API via Gateway](http://localhost:8080/api/notifications/)
+
+##### Example Kafka Payloads
+```json
+{
+  "eventType": "NotificationSent",
+  "notificationId": "NT-2222",
+  "channel": "EMAIL",
+  "to": "alice@example.com",
+  "template": "order-confirmed",
+  "status": "SENT",
+  "timestamp": "2024-01-01T12:22:00Z",
+  "metadata": {"source": "notification-service", "version": 1}
+}
 ```
 
 ---
@@ -482,6 +688,33 @@ flowchart LR
   RV -->|Fetch| PR[Product]
 ```
 
+#### Details
+- **Responsibilities**: Manage product reviews/ratings and moderation.
+- **Primary endpoints**: `/api/reviews`, `/api/reviews/{id}`, `/api/reviews/product/{productId}`
+- **Data model hints**: `Review{id, productId, userId, rating, comment, status}`
+- **Events purpose**: `ReviewCreated/Updated/Flagged` enable moderation and notifications.
+- **Dependencies**: Reads `User` and `Product` for enrichment; notifies `Notification` on moderation.
+- **Resilience**: Anti-abuse throttling; moderation queue.
+- **Observability**: Metrics `reviews.created.count`, `reviews.avg.rating`.
+
+##### Quick Links
+- [API via Gateway](http://localhost:8080/api/reviews/)
+
+##### Example Kafka Payloads
+```json
+{
+  "eventType": "ReviewCreated",
+  "reviewId": "REV-1234",
+  "productId": "PROD-123",
+  "userId": "b1b2c3d4",
+  "rating": 5,
+  "comment": "Great product!",
+  "status": "PENDING",
+  "timestamp": "2024-01-01T12:18:00Z",
+  "metadata": {"source": "review-service", "version": 1}
+}
+```
+
 ---
 
 ### 🔍 **Search Service** `Port: 8091`
@@ -507,6 +740,29 @@ flowchart LR
   PR[Product Events] -->|Kafka| SR[Search Indexer]
   SR --> ES[(Elasticsearch)]
   Client -->|/api/search| SR
+```
+
+#### Details
+- **Responsibilities**: Full-text search and facets; maintain index from product events.
+- **Primary endpoints**: `/api/search?q=...&filters=...`
+- **Data model hints**: Indexed document `ProductIndex{id, title, tokens[], facets}`
+- **Events purpose**: Consume `Product*` to update search index.
+- **Dependencies**: Elasticsearch/OpenSearch; product events via Kafka.
+- **Resilience**: Bulk indexing with retries; circuit breaker to ES.
+- **Observability**: Metrics `search.query.latency`, `indexing.backlog.size`.
+
+##### Quick Links
+- [API via Gateway](http://localhost:8080/api/search/)
+
+##### Example Kafka Payloads
+```json
+{
+  "eventType": "SearchIndexUpdated",
+  "productId": "SKU-123",
+  "action": "UPSERT",
+  "timestamp": "2024-01-01T12:25:00Z",
+  "metadata": {"source": "search-service", "version": 1}
+}
 ```
 
 ---
@@ -536,6 +792,29 @@ flowchart LR
   Client -->|/api/recommendations| RC
 ```
 
+#### Details
+- **Responsibilities**: Generate personalized recommendations.
+- **Primary endpoints**: `/api/recommendations/{userId}`
+- **Data model hints**: `Recommendation{userId, items[{productId, score}]}`
+- **Events purpose**: Consume behavior signals from `Order/Cart/Product/User`.
+- **Dependencies**: Redis/Postgres for models and features; product catalog for lookups.
+- **Resilience**: Model version fallbacks; cache warmers.
+- **Observability**: Metrics `recommendations.served.count`, `ctr.rate`.
+
+##### Quick Links
+- [API via Gateway](http://localhost:8080/api/recommendations/)
+
+##### Example Kafka Payloads
+```json
+{
+  "eventType": "RecommendationServed",
+  "userId": "b1b2c3d4",
+  "items": [{"productId": "SKU-123", "score": 0.91}],
+  "timestamp": "2024-01-01T12:26:00Z",
+  "metadata": {"source": "recommendation-service", "version": 1}
+}
+```
+
 ---
 
 ### 📊 **Analytics Service** `Port: 8093`
@@ -561,6 +840,30 @@ flowchart LR
   DP[Data Pipeline Streams] --> AN[Analytics Aggregator]
   AN --> RP[Reporting]
   Client -->|/api/analytics| AN
+```
+
+#### Details
+- **Responsibilities**: Compute and expose business metrics and aggregates.
+- **Primary endpoints**: `/api/analytics/metrics`, `/api/analytics/dashboards/{id}`
+- **Data model hints**: `Metric{name, value, dims{}, ts}`
+- **Events purpose**: Consume streams from `Data Pipeline` for near-real-time insights.
+- **Dependencies**: Kafka Streams topologies; sinks to Reporting.
+- **Resilience**: Exactly-once semantics; replayable sinks.
+- **Observability**: Metrics `analytics.pipeline.lag.ms`, `analytics.query.latency`.
+
+##### Quick Links
+- [API via Gateway](http://localhost:8080/api/analytics/)
+
+##### Example Kafka Payloads
+```json
+{
+  "eventType": "MetricComputed",
+  "name": "daily_sales_usd",
+  "value": 12345.67,
+  "dimensions": {"region": "NA"},
+  "timestamp": "2024-01-01T12:30:00Z",
+  "metadata": {"source": "analytics-service", "version": 1}
+}
 ```
 
 ---
@@ -602,6 +905,14 @@ sequenceDiagram
   end
 ```
 
+#### Details
+- **Responsibilities**: Route, authenticate, and enforce cross-cutting concerns for all APIs.
+- **Primary endpoints**: `/api/<service>/**`
+- **Policies**: Rate limiting, authN/Z via filters, path rewriting, retries, circuit breakers.
+- **Dependencies**: `Service Registry` (discovery), `Auth` (JWT), `Config Server` (policies).
+- **Resilience**: Backpressure, timeouts, hedging (optional), fault injection for chaos.
+- **Observability**: Access logs, traces, and request metrics.
+
 ---
 
 ### 🌐 **Service Registry** `Port: 8761`
@@ -624,6 +935,13 @@ flowchart LR
   GW[Gateway] -->|Discover| RG
   SVC1 & SVC2 -->|Discover peers| RG
 ```
+
+#### Details
+- **Responsibilities**: Maintain service instance registry and enable discovery.
+- **Endpoints**: Eureka dashboard; client registration/heartbeat.
+- **Dependencies**: Used by `Gateway` and services to find peers.
+- **Resilience**: Self-healing via heartbeat; TTL-based evictions.
+- **Observability**: Metrics `eureka.registry.size`, `instance.renewals`.
 
 ---
 
@@ -650,6 +968,13 @@ sequenceDiagram
   SV-->>CF: /actuator/refresh (via Bus)
 ```
 
+#### Details
+- **Responsibilities**: Serve centralized config to services across environments.
+- **Endpoints**: `/actuator/refresh` via Bus; config retrieval on bootstrap.
+- **Dependencies**: Backed by Git or filesystem; integrated with Spring Cloud.
+- **Resilience**: Cached configs; fallback defaults; secret encryption.
+- **Observability**: Metrics `config.requests.count`, `refresh.events.count`.
+
 ---
 
 ### 📡 **Monitoring Service** `Port: 8094`
@@ -671,6 +996,13 @@ flowchart LR
   MN --> Dash[Dashboards]
   MN --> Alerts[Alerts]
 ```
+
+#### Details
+- **Responsibilities**: Collect metrics/traces/logs and expose dashboards/alerts.
+- **Endpoints**: Prometheus scrape `/actuator/prometheus`, Grafana dashboards.
+- **Dependencies**: OTel/Zipkin instrumentation; Alertmanager.
+- **Resilience**: Sampling and retention policies.
+- **Observability**: SLOs, alert rules, and service-level metrics.
 
 ---
 
@@ -694,6 +1026,12 @@ flowchart LR
   ES --> KB[Kibana]
 ```
 
+#### Details
+- **Responsibilities**: Centralize logs and provide query/visualization.
+- **Components**: Shippers (Filebeat/Fluentd) → Elasticsearch → Kibana.
+- **Resilience**: Backpressure and buffering; index lifecycle policies.
+- **Observability**: Log ingestion rates, error rates, index health.
+
 ---
 
 ### 📈 **Reporting Service** `Port: 8096`
@@ -713,6 +1051,30 @@ flowchart LR
 flowchart LR
   AN[Analytics] --> RP[Reporting]
   Client -->|/api/reports| RP
+```
+
+#### Details
+- **Responsibilities**: Deliver scheduled and ad-hoc business reports.
+- **Primary endpoints**: `/api/reports`, `/api/reports/{id}`, `/api/reports/run`
+- **Data model hints**: `Report{id, name, params{}, format, status}`
+- **Dependencies**: Reads aggregates from `Analytics`.
+- **Resilience**: Scheduled retries; caching of report artifacts.
+- **Observability**: Metrics `reports.generated.count`, `report.latency.ms`.
+
+##### Quick Links
+- [API via Gateway](http://localhost:8080/api/reports/)
+
+##### Example Kafka Payloads
+```json
+{
+  "eventType": "ReportGenerated",
+  "reportId": "REP-9090",
+  "name": "weekly_sales",
+  "format": "PDF",
+  "status": "COMPLETED",
+  "timestamp": "2024-01-01T12:35:00Z",
+  "metadata": {"source": "reporting-service", "version": 1}
+}
 ```
 
 ---
@@ -738,6 +1100,12 @@ flowchart LR
   Client -->|Browse/Search| AU
 ```
 
+#### Details
+- **Responsibilities**: Immutable audit trail for compliance and forensics.
+- **Data model hints**: `AuditEvent{id, type, entityType, entityId, userId, ts, payload}`
+- **Dependencies**: Consumes all significant domain events.
+- **Observability**: Audit completeness and retention metrics.
+
 ---
 
 ### 💾 **Backup Service** `Port: 8098`
@@ -758,6 +1126,12 @@ flowchart LR
   SC[Scheduler] --> BK[Backup]
   BK --> S3[(Object Storage)]
 ```
+
+#### Details
+- **Responsibilities**: Automated backups and restores to object storage.
+- **Endpoints**: Managed internally; triggered by Scheduler.
+- **Resilience**: Verification and retention policies.
+- **Observability**: Metrics `backup.success.count`, `backup.duration.ms`.
 
 ---
 
@@ -781,6 +1155,12 @@ flowchart LR
   SC --> SR[Search Reindex]
 ```
 
+#### Details
+- **Responsibilities**: Run scheduled jobs with distributed locks.
+- **Endpoints**: Cron job definitions; triggers for backups/reports/reindexing.
+- **Resilience**: ShedLock for single-run guarantees.
+- **Observability**: Metrics `jobs.executed.count`, `job.failure.count`.
+
 ---
 
 ### 🌊 **Data Pipeline Service** `Port: 8100`
@@ -801,6 +1181,27 @@ flowchart LR
   EV[Business Topics] --> DP[Data Pipeline]
   DP --> AN[Analytics]
   DP --> RP[Reporting]
+```
+
+#### Details
+- **Responsibilities**: Ingest/transform/route domain streams to sinks.
+- **Endpoints**: `/api/pipeline/**` for management/health.
+- **Resilience**: Exactly-once processing; schema validation via registry.
+- **Observability**: Metrics `pipeline.lag.ms`, `pipeline.error.rate`.
+
+##### Quick Links
+- [API via Gateway](http://localhost:8080/api/pipeline/)
+
+##### Example Kafka Payloads
+```json
+{
+  "eventType": "PipelineBatchProcessed",
+  "batchId": "BATCH-20240101-01",
+  "records": 50000,
+  "lagMs": 1200,
+  "timestamp": "2024-01-01T12:40:00Z",
+  "metadata": {"source": "data-pipeline-service", "version": 1}
+}
 ```
 
 ---
@@ -827,9 +1228,84 @@ flowchart LR
   CL --> Others[All Services]
 ```
 
+#### Details
+- **Responsibilities**: Provide shared DTOs, event schemas, security, and error handling.
+- **Contracts**: Event headers, envelope schemas, error formats.
+- **Observability**: Versioned artifacts; changelog for breaking changes.
+
 ---
 
 ## 🔄 Service Interactions
+
+## 📘 Swagger UI Links
+Conventional Springdoc paths (if enabled per service):
+
+- User Service: http://localhost:8081/swagger-ui/index.html
+- Auth Service: http://localhost:8082/swagger-ui/index.html
+- Product Service: http://localhost:8083/swagger-ui/index.html
+- Inventory Service: http://localhost:8084/swagger-ui/index.html
+- Cart Service: http://localhost:8085/swagger-ui/index.html
+- Order Service: http://localhost:8086/swagger-ui/index.html
+- Payment Service: http://localhost:8087/swagger-ui/index.html
+- Delivery Service: http://localhost:8088/swagger-ui/index.html
+- Notification Service: http://localhost:8089/swagger-ui/index.html
+- Review Service: http://localhost:8090/swagger-ui/index.html
+- Search Service: http://localhost:8091/swagger-ui/index.html
+- Recommendation Service: http://localhost:8092/swagger-ui/index.html
+- Analytics Service: http://localhost:8093/swagger-ui/index.html
+- Monitoring Service: http://localhost:8094/swagger-ui/index.html
+- Logging Service: http://localhost:8095/swagger-ui/index.html
+- Reporting Service: http://localhost:8096/swagger-ui/index.html
+- Audit Service: http://localhost:8097/swagger-ui/index.html
+- Backup Service: http://localhost:8098/swagger-ui/index.html
+- Scheduler Service: http://localhost:8099/swagger-ui/index.html
+- Data Pipeline Service: http://localhost:8100/swagger-ui/index.html
+
+Note: some platform services may not expose Swagger UIs or keep them disabled in production profiles.
+
+## 🧾 Event Schema Index
+Reference of common event payloads from `common/` used across services. Base envelope fields come from `BaseEvent`.
+
+- **BaseEvent** (`common/src/main/java/com/ironsoftware/common/events/BaseEvent.java`)
+  - `eventId: string`, `eventType: string`, `timestamp: Instant`, `source: string`, `version: string`
+
+- **UserRegisteredEvent** (`.../events/user/UserRegisteredEvent.java`)
+  - Extends `BaseEvent`
+  - `userId: string`, `email: string`, `username: string`, `emailVerified: boolean`
+
+- **OrderCreatedEvent** (`.../events/OrderCreatedEvent.java`)
+  - `orderId: string`, `userId: string`, `productId: string`, `quantity: int`
+
+- **PaymentProcessedEvent** (`.../events/PaymentProcessedEvent.java`)
+  - `orderId: string`, `userId: string`, `amount: BigDecimal`, `transactionId: string`, `status: string`, `processedAt: LocalDateTime`
+
+- **InventoryUpdatedEvent** (`.../events/InventoryUpdatedEvent.java`)
+  - `productId: string`, `quantity: int`, `availableStock: int`, `status: string`, `orderId: string`
+
+- **DeliveryCreatedEvent** (`.../events/delivery/DeliveryCreatedEvent.java`)
+  - Extends `BaseEvent`
+  - `deliveryId, trackingNumber, orderId, customerId, recipientName, street, city, state, country, zipCode, phoneNumber, pickupLongitude, pickupLatitude, deliveryLongitude, deliveryLatitude`
+
+<sub>Additions like `DeliveryStatusUpdatedEvent` and `UserActivityEvent` follow similar patterns.</sub>
+
+## 📄 OpenAPI JSON via Gateway
+Direct links to OpenAPI specs through the API Gateway:
+
+- User: http://localhost:8080/api/users/v3/api-docs
+- Auth: http://localhost:8080/api/auth/v3/api-docs
+- Product: http://localhost:8080/api/products/v3/api-docs
+- Inventory: http://localhost:8080/api/inventory/v3/api-docs
+- Cart: http://localhost:8080/api/cart/v3/api-docs
+- Order: http://localhost:8080/api/orders/v3/api-docs
+- Payment: http://localhost:8080/api/payments/v3/api-docs
+- Delivery: http://localhost:8080/api/delivery/v3/api-docs
+- Notification: http://localhost:8080/api/notifications/v3/api-docs
+- Review: http://localhost:8080/api/reviews/v3/api-docs
+- Search: http://localhost:8080/api/search/v3/api-docs
+- Recommendation: http://localhost:8080/api/recommendations/v3/api-docs
+- Analytics: http://localhost:8080/api/analytics/v3/api-docs
+- Reporting: http://localhost:8080/api/reports/v3/api-docs
+- Data Pipeline: http://localhost:8080/api/pipeline/v3/api-docs
 
 ### 📋 Quick Interaction Matrix
 

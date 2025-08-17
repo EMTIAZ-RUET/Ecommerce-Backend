@@ -229,6 +229,33 @@ Shared module:
 
 <sub>If a link returns 404, the service may not expose Swagger UI; use the base route or service README.</sub>
 
+### Swagger UI Links
+
+Conventional Springdoc paths (if enabled per service):
+
+- User Service: http://localhost:8081/swagger-ui/index.html
+- Auth Service: http://localhost:8082/swagger-ui/index.html
+- Product Service: http://localhost:8083/swagger-ui/index.html
+- Inventory Service: http://localhost:8084/swagger-ui/index.html
+- Cart Service: http://localhost:8085/swagger-ui/index.html
+- Order Service: http://localhost:8086/swagger-ui/index.html
+- Payment Service: http://localhost:8087/swagger-ui/index.html
+- Delivery Service: http://localhost:8088/swagger-ui/index.html
+- Notification Service: http://localhost:8089/swagger-ui/index.html
+- Review Service: http://localhost:8090/swagger-ui/index.html
+- Search Service: http://localhost:8091/swagger-ui/index.html
+- Recommendation Service: http://localhost:8092/swagger-ui/index.html
+- Analytics Service: http://localhost:8093/swagger-ui/index.html
+- Monitoring Service: http://localhost:8094/swagger-ui/index.html
+- Logging Service: http://localhost:8095/swagger-ui/index.html
+- Reporting Service: http://localhost:8096/swagger-ui/index.html
+- Audit Service: http://localhost:8097/swagger-ui/index.html
+- Backup Service: http://localhost:8098/swagger-ui/index.html
+- Scheduler Service: http://localhost:8099/swagger-ui/index.html
+- Data Pipeline Service: http://localhost:8100/swagger-ui/index.html
+
+Note: platform services may not expose Swagger in production profiles.
+
 ### 🧩 Component Architecture
 
 ```mermaid
@@ -385,113 +412,409 @@ Below mirrors the README Interactions blocks for quick lookup.
   - REST: `/api/users/**`
   - Publishes: `UserRegistered`, `UserProfileUpdated`, `UserDeleted`
   - Consumes: —
+  - Links: [Open API](http://localhost:8080/api/users/)
+  - Diagram:
+    ```mermaid
+    sequenceDiagram
+      autonumber
+      participant US as User Service
+      participant NT as Notification
+      participant AN as Analytics
+      participant AD as Audit
+      US-->>NT: UserRegistered
+      US-->>AN: UserProfileUpdated
+      US-->>AD: UserDeleted
+    ```
+  - Example events:
+    ```json
+    {"type":"UserRegistered","userId":"user-123","email":"a@b.com","ts":"2025-08-17T16:00:00Z"}
+    {"type":"UserProfileUpdated","userId":"user-123","changes":{"name":"Alice"},"ts":"2025-08-17T16:05:00Z"}
+    ```
 
 - **Auth**
   - REST: `/api/auth/**`
   - Publishes: `UserAuthenticated`, `LoginFailed`
   - Consumes: —
+  - Links: [Open API](http://localhost:8080/api/auth/)
+  - Diagram:
+    ```mermaid
+    sequenceDiagram
+      autonumber
+      actor CL as Client
+      participant GW as API Gateway
+      participant AU as Auth
+      CL->>GW: POST /api/auth/login
+      GW->>AU: Validate credentials
+      AU-->>GW: JWT
+      note over GW,AU: GW validates JWT on all requests
+    ```
+  - Example events:
+    ```json
+    {"type":"UserAuthenticated","userId":"user-123","ip":"203.0.113.10","ts":"2025-08-17T16:06:00Z"}
+    {"type":"LoginFailed","username":"a@b.com","reason":"BAD_CREDENTIALS","ts":"2025-08-17T16:06:12Z"}
+    ```
 
 - **Product**
   - REST: `/api/products/**`
   - Publishes: `ProductCreated`, `ProductUpdated`, `ProductDeleted`, `PriceChanged`
   - Consumes: —
+  - Links: [Open API](http://localhost:8080/api/products/)
+  - Diagram:
+    ```mermaid
+    sequenceDiagram
+      autonumber
+      participant PR as Product
+      participant SR as Search
+      participant RC as Recommendation
+      PR-->>SR: ProductUpdated
+      PR-->>RC: PriceChanged
+    ```
+  - Example events:
+    ```json
+    {"type":"ProductUpdated","productId":"prod-1","fields":{"price":129.99}}
+    {"type":"PriceChanged","productId":"prod-1","old":149.99,"new":129.99}
+    ```
 
 - **Inventory**
   - REST: `/api/inventory/**`
   - Publishes: `InventoryUpdated`, `LowStockAlert`
   - Consumes: `order-confirmed`, `order-cancelled`
+  - Links: [Open API](http://localhost:8080/api/inventory/)
+  - Diagram:
+    ```mermaid
+    sequenceDiagram
+      autonumber
+      participant OR as Order
+      participant IV as Inventory
+      OR->>IV: POST /reserve
+      IV-->>OR: reservationId
+      OR-->>IV: order-confirmed | order-cancelled (Kafka)
+      IV-->>OR: InventoryUpdated (ack via event)
+    ```
+  - Example events:
+    ```json
+    {"type":"InventoryUpdated","sku":"SKU-1","delta":-2,"reason":"ORDER_CONFIRMED"}
+    {"type":"LowStockAlert","sku":"SKU-1","available":3,"threshold":5}
+    ```
 
 - **Cart**
   - REST: `/api/cart/**`
   - Publishes: `Cart*`
   - Consumes: —
+  - Links: [Open API](http://localhost:8080/api/cart/)
+  - Diagram:
+    ```mermaid
+    sequenceDiagram
+      autonumber
+      participant CT as Cart
+      participant PR as Product
+      participant IV as Inventory
+      CT->>PR: Fetch price
+      CT->>IV: Check availability
+      CT-->>CT: Publish ItemAddedToCart
+    ```
+  - Example events:
+    ```json
+    {"type":"ItemAddedToCart","userId":"user-123","sku":"SKU-1","qty":2}
+    ```
 
 - **Order**
   - REST: `/api/orders/**`
   - Publishes: `order-created`, `order-confirmed`, `order-cancelled`
   - Consumes: `payment-events`
+  - Links: [Open API](http://localhost:8080/api/orders/)
+  - Diagram:
+    ```mermaid
+    sequenceDiagram
+      autonumber
+      participant OR as Order
+      participant PM as Payment
+      participant IV as Inventory
+      OR->>IV: Reserve
+      OR->>PM: Authorize/Capture
+      PM-->>OR: PaymentProcessed | PaymentFailed
+      alt success
+        OR->>IV: Commit
+        OR-->>OR: publish order-confirmed
+      else failure
+        OR->>IV: Release
+        OR-->>OR: publish order-cancelled
+      end
+    ```
+  - Example events:
+    ```json
+    {"type":"order-created","orderId":"ord-1","userId":"user-123","total":199.99}
+    {"type":"order-confirmed","orderId":"ord-1","paymentId":"pay-1"}
+    {"type":"order-cancelled","orderId":"ord-2","reason":"PAYMENT_FAILED"}
+    ```
 
 - **Payment**
   - REST: `/api/payments/**`
   - Publishes: `payment-events` (processed/failed/refund)
   - Consumes: —
+  - Links: [Open API](http://localhost:8080/api/payments/)
+  - Diagram:
+    ```mermaid
+    sequenceDiagram
+      autonumber
+      participant OR as Order
+      participant PM as Payment
+      OR->>PM: POST /api/payments
+      PM-->>OR: PaymentProcessed | PaymentFailed
+    ```
+  - Example events:
+    ```json
+    {"type":"PaymentProcessed","orderId":"ord-1","amount":199.99,"txnId":"txn_123"}
+    {"type":"PaymentFailed","orderId":"ord-2","reason":"DECLINED","code":"card_declined"}
+    {"type":"RefundIssued","orderId":"ord-3","amount":50.00,"txnId":"rf_456"}
+    ```
 
 ### Advanced Services
 - **Delivery**
   - REST: `/api/delivery/**`
   - Publishes: `ShipmentCreated`, `ShipmentDispatched`, `DeliveryCompleted`, `ReturnInitiated`
   - Consumes: `order-confirmed`
+  - Links: [Open API](http://localhost:8080/api/delivery/)
+  - Diagram:
+    ```mermaid
+    sequenceDiagram
+      autonumber
+      participant OR as Order
+      participant DV as Delivery
+      OR-->>DV: order-confirmed
+      DV->>DV: Create shipment (carrier API)
+      DV-->>OR: ShipmentCreated/Dispatched
+    ```
+  - Example events:
+    ```json
+    {"type":"ShipmentCreated","orderId":"ord-1","tracking":"1Z999"}
+    {"type":"DeliveryCompleted","orderId":"ord-1","deliveredAt":"2025-08-18T10:00:00Z"}
+    ```
 
 - **Notification**
   - REST: `/api/notifications/**`
   - Publishes: —
   - Consumes: `Order*`, `Payment*`, `Delivery*`, `UserRegistered`
+  - Links: [Open API](http://localhost:8080/api/notifications/)
+  - Diagram:
+    ```mermaid
+    flowchart LR
+      EV[Domain Events] -->|Kafka| NS[Notification]
+      NS --> Email
+      NS --> SMS
+      NS --> Push
+    ```
+  - Example events:
+    ```json
+    {"type":"NotificationSent","channel":"EMAIL","to":"a@b.com","template":"ORDER_CONFIRMED","refId":"ord-1"}
+    ```
 
 - **Review**
   - REST: `/api/reviews/**`
   - Publishes: `ReviewCreated`, `ReviewUpdated`, `ReviewFlagged`
   - Consumes: —
+  - Links: [Open API](http://localhost:8080/api/reviews/)
+  - Diagram:
+    ```mermaid
+    flowchart LR
+      RV[Review] -->|Create/Update| EV{Emit Events}
+      EV --> NT[Notification]
+      RV -->|Fetch| US[User]
+      RV -->|Fetch| PR[Product]
+    ```
+  - Example events:
+    ```json
+    {"type":"ReviewCreated","reviewId":"rev-1","productId":"prod-1","rating":5}
+    ```
 
 - **Search**
   - REST: `/api/search/**`
   - Publishes: —
   - Consumes: `Product*`
+  - Links: [Open API](http://localhost:8080/api/search/)
+  - Diagram:
+    ```mermaid
+    flowchart LR
+      PR[Product Events] -->|Kafka| SR[Search Indexer]
+      SR --> ES[(Elasticsearch)]
+      Client -->|/api/search| SR
+    ```
 
 - **Recommendation**
   - REST: `/api/recommendations/**`
   - Publishes: —
   - Consumes: `Order*`, `Cart*`, `Product*`, `User*`
+  - Links: [Open API](http://localhost:8080/api/recommendations/)
+  - Diagram:
+    ```mermaid
+    flowchart LR
+      EV[Orders/Cart/Product/User Events] --> RC[Recommendation]
+      RC --> FEED[Personalized Feed]
+      Client -->|/api/recommendations| RC
+    ```
 
 - **Analytics**
   - REST: `/api/analytics/**`
   - Publishes: —
   - Consumes: All business events via Data Pipeline
+  - Links: [Open API](http://localhost:8080/api/analytics/)
+  - Diagram:
+    ```mermaid
+    flowchart LR
+      DP[Data Pipeline Streams] --> AN[Analytics]
+      AN --> RP[Reporting]
+      Client -->|/api/analytics| AN
+    ```
 
 - **Reporting**
   - REST: `/api/reports/**`
   - Publishes: —
   - Consumes: Aggregates from Analytics
+  - Links: [Open API](http://localhost:8080/api/reports/)
+  - Diagram:
+    ```mermaid
+    flowchart LR
+      AN[Analytics] --> RP[Reporting]
+      Client -->|/api/reports| RP
+    ```
 
 ### Platform & Infrastructure
 - **API Gateway**
   - REST ingress: `/api/<service>/**`
   - Publishes/Consumes: —
+  - Links: [Gateway README](../api-gateway/README.md)
+  - Diagram:
+    ```mermaid
+    sequenceDiagram
+      autonumber
+      participant CL as Client
+      participant GW as API Gateway
+      participant AU as Auth
+      participant SVC as Target Service
+      CL->>GW: /api/<service>/...
+      GW->>AU: Validate JWT
+      AU-->>GW: OK/Forbidden
+      alt Authorized
+        GW->>SVC: Proxy request
+        SVC-->>GW: Response
+        GW-->>CL: Response
+      else Rejected
+        GW-->>CL: 401/403
+      end
+    ```
 
 - **Service Registry (Eureka)**
   - REST: Dashboard only
   - Publishes/Consumes: —
+  - Links: [Service Registry README](../service-registry/README.md)
+  - Diagram:
+    ```mermaid
+    flowchart LR
+      SVC1[Service A] --> RG[Eureka]
+      SVC2[Service B] --> RG
+      GW[Gateway] -->|Discover| RG
+      SVC1 & SVC2 -->|Discover peers| RG
+    ```
 
 - **Config Server**
   - REST: `/actuator/refresh` (via Bus), config endpoints
   - Publishes/Consumes: Spring Cloud Bus events
+  - Links: [Config README](../config-server/README.md)
+  - Diagram:
+    ```mermaid
+    sequenceDiagram
+      autonumber
+      participant CF as Config Server
+      participant SV as Service
+      SV->>CF: GET config on startup
+      CF-->>SV: application.yml (profile)
+      SV-->>CF: /actuator/refresh
+    ```
 
 - **Monitoring**
   - REST: scrapes `/actuator/prometheus`
   - Consumes: Metrics, traces, logs
+  - Links: [Monitoring README](../monitoring-service/README.md)
+  - Diagram:
+    ```mermaid
+    flowchart LR
+      SVC[Services] --> MN[Monitoring]
+      MN --> Dash[Dashboards]
+      MN --> Alerts[Alerts]
+    ```
 
 - **Logging**
   - Ingests: Logs from services
   - Egress: Elasticsearch/Kibana
+  - Links: [Logging README](../logging-service/README.md)
+  - Diagram:
+    ```mermaid
+    flowchart LR
+      SVC[Services] -->|Filebeat/Fluentd| LG[Logging]
+      LG --> ES[(Elasticsearch)]
+      ES --> KB[Kibana]
+    ```
 
 - **Audit**
   - REST: browse/search trail
   - Consumes: All significant domain events (immutable store)
+  - Links: [Audit README](../audit-service/README.md)
+  - Diagram:
+    ```mermaid
+    flowchart LR
+      EV[Domain Events] --> AU[Audit Store]
+      Client -->|Browse/Search| AU
+    ```
 
 - **Backup**
   - Triggers: Scheduler
   - Egress: Object storage
+  - Links: [Backup README](../backup-service/README.md)
+  - Diagram:
+    ```mermaid
+    flowchart LR
+      SC[Scheduler] --> BK[Backup]
+      BK --> S3[(Object Storage)]
+    ```
 
 - **Scheduler**
   - Publishes: Maintenance/cleanup events
   - Triggers: Backups, report generation, reindexing
+  - Links: [Scheduler README](../scheduler-service/README.md)
+  - Diagram:
+    ```mermaid
+    flowchart LR
+      SC[Scheduler] -->|Cron| BK[Backup]
+      SC --> RP[Reporting]
+      SC --> SR[Search Reindex]
+    ```
 
 - **Data Pipeline**
   - REST: `/api/pipeline/**`
   - Publishes: Transformed streams
   - Consumes: All business topics
+  - Links: [Open API](http://localhost:8080/api/pipeline/)
+  - Diagram:
+    ```mermaid
+    flowchart LR
+      EV[Business Topics] --> DP[Data Pipeline]
+      DP --> AN[Analytics]
+      DP --> RP[Reporting]
+    ```
 
 - **Common Library**
   - Used by: All services (DTOs, events, security, errors)
+  - Links: [Common module](../common/README.md)
+  - Diagram:
+    ```mermaid
+    flowchart LR
+      CL[Common Library] --> US[User]
+      CL --> PR[Product]
+      CL --> OR[Order]
+      CL --> PM[Payment]
+      CL --> DV[Delivery]
+      CL --> Others[All Services]
+    ```
 
 ---
 
