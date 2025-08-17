@@ -708,6 +708,34 @@ sequenceDiagram
 
 <p align="center"><em>Static export:</em> <a href="docs/images/service-map-root.svg">docs/images/service-map-root.svg</a></p>
 
+#### How to use the interactive diagrams
+
+- **Click any service node** to open its live API via the Gateway (e.g., `http://localhost:8080/api/<service>/`).
+- **Tooltips** show the service name and route; **hover states** underline labels.
+- **Dark mode** is supported automatically via `prefers-color-scheme`.
+- **Infra nodes** (gateway, registry, config, logging, monitoring, etc.) link to their local READMEs.
+- To make links work locally, start the stack (e.g., `docker-compose up` or project scripts) so the Gateway is at `http://localhost:8080`.
+- If your base URL differs (Kubernetes/Ingress), update the hrefs or set up port-forwarding to match `8080`.
+
+#### Quick links (Swagger & OpenAPI)
+
+- User: [Swagger UI](http://localhost:8080/api/users/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/users/v3/api-docs)
+- Product: [Swagger UI](http://localhost:8080/api/products/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/products/v3/api-docs)
+- Cart: [Swagger UI](http://localhost:8080/api/cart/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/cart/v3/api-docs)
+- Order: [Swagger UI](http://localhost:8080/api/orders/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/orders/v3/api-docs)
+- Payment: [Swagger UI](http://localhost:8080/api/payments/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/payments/v3/api-docs)
+- Inventory: [Swagger UI](http://localhost:8080/api/inventory/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/inventory/v3/api-docs)
+- Delivery: [Swagger UI](http://localhost:8080/api/delivery/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/delivery/v3/api-docs)
+- Notification: [Swagger UI](http://localhost:8080/api/notifications/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/notifications/v3/api-docs)
+- Review: [Swagger UI](http://localhost:8080/api/reviews/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/reviews/v3/api-docs)
+- Search: [Swagger UI](http://localhost:8080/api/search/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/search/v3/api-docs)
+- Recommendation: [Swagger UI](http://localhost:8080/api/recommendations/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/recommendations/v3/api-docs)
+- Analytics: [Swagger UI](http://localhost:8080/api/analytics/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/analytics/v3/api-docs)
+- Reporting: [Swagger UI](http://localhost:8080/api/reports/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/reports/v3/api-docs)
+- Data Pipeline: [Swagger UI](http://localhost:8080/api/pipeline/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/pipeline/v3/api-docs)
+
+Note: If a link returns 404, ensure the service includes Springdoc OpenAPI and exposes Swagger UI; otherwise, use the base route links or service README.
+
 ### 🧩 Component Architecture
 
 ```mermaid

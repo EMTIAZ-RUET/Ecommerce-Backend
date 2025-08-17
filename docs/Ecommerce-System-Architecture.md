@@ -202,6 +202,145 @@ Shared module:
 
 <p align="center"><em>Static export:</em> <a href="images/service-map-architecture.svg">docs/images/service-map-architecture.svg</a></p>
 
+#### How to use the interactive diagrams
+
+- **Click any service node** to open its live API via the Gateway (e.g., `http://localhost:8080/api/<service>/`).
+- **Tooltips** show the service name and route; **hover states** underline labels.
+- **Dark mode** honors your system preference via `prefers-color-scheme`.
+- **Infra nodes** link to their local READMEs for details.
+- Ensure the stack is running so the Gateway is reachable at `http://localhost:8080`.
+
+#### Quick links (Swagger & OpenAPI)
+
+- User: [Swagger UI](http://localhost:8080/api/users/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/users/v3/api-docs)
+- Product: [Swagger UI](http://localhost:8080/api/products/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/products/v3/api-docs)
+- Cart: [Swagger UI](http://localhost:8080/api/cart/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/cart/v3/api-docs)
+- Order: [Swagger UI](http://localhost:8080/api/orders/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/orders/v3/api-docs)
+- Payment: [Swagger UI](http://localhost:8080/api/payments/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/payments/v3/api-docs)
+- Inventory: [Swagger UI](http://localhost:8080/api/inventory/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/inventory/v3/api-docs)
+- Delivery: [Swagger UI](http://localhost:8080/api/delivery/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/delivery/v3/api-docs)
+- Notification: [Swagger UI](http://localhost:8080/api/notifications/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/notifications/v3/api-docs)
+- Review: [Swagger UI](http://localhost:8080/api/reviews/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/reviews/v3/api-docs)
+- Search: [Swagger UI](http://localhost:8080/api/search/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/search/v3/api-docs)
+- Recommendation: [Swagger UI](http://localhost:8080/api/recommendations/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/recommendations/v3/api-docs)
+- Analytics: [Swagger UI](http://localhost:8080/api/analytics/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/analytics/v3/api-docs)
+- Reporting: [Swagger UI](http://localhost:8080/api/reports/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/reports/v3/api-docs)
+- Data Pipeline: [Swagger UI](http://localhost:8080/api/pipeline/swagger-ui/index.html) · [OpenAPI JSON](http://localhost:8080/api/pipeline/v3/api-docs)
+
+<sub>If a link returns 404, the service may not expose Swagger UI; use the base route or service README.</sub>
+
+### 🧩 Component Architecture
+
+```mermaid
+graph LR
+  subgraph Core
+    US[User]
+    AS[Auth]
+    PR[Product]
+    CT[Cart]
+    OR[Order]
+    PM[Payment]
+  end
+  subgraph Advanced
+    IV[Inventory]
+    DV[Delivery]
+    NT[Notification]
+    RV[Review]
+    SR[Search]
+    RC[Recommendation]
+    AN[Analytics]
+    RP[Reporting]
+  end
+  subgraph Platform
+    GW[API Gateway]
+    RG[Service Registry]
+    CF[Config Server]
+    MN[Monitoring]
+    LG[Logging]
+    AD[Audit]
+    BK[Backup]
+    SC[Scheduler]
+    DP[Data Pipeline]
+  end
+  GW-->US
+  GW-->PR
+  GW-->CT
+  CT-->IV
+  OR-->PM
+  OR-->IV
+  OR-->DV
+  PR-->SR
+  CT-->RC
+  OR-->NT
+  DP-->AN
+  PR-->DP
+  OR-->DP
+  PM-->DP
+  AN-->RP
+  US-->AD
+  OR-->AD
+  click US "http://localhost:8080/api/users/" "Open User API via Gateway"
+  click AS "http://localhost:8080/api/auth/" "Open Auth API via Gateway"
+  click PR "http://localhost:8080/api/products/" "Open Product API via Gateway"
+  click CT "http://localhost:8080/api/cart/" "Open Cart API via Gateway"
+  click OR "http://localhost:8080/api/orders/" "Open Order API via Gateway"
+  click PM "http://localhost:8080/api/payments/" "Open Payment API via Gateway"
+  click IV "http://localhost:8080/api/inventory/" "Open Inventory API via Gateway"
+  click DV "http://localhost:8080/api/delivery/" "Open Delivery API via Gateway"
+  click NT "http://localhost:8080/api/notifications/" "Open Notification API via Gateway"
+  click RV "http://localhost:8080/api/reviews/" "Open Review API via Gateway"
+  click SR "http://localhost:8080/api/search/" "Open Search API via Gateway"
+  click RC "http://localhost:8080/api/recommendations/" "Open Recommendation API via Gateway"
+  click AN "http://localhost:8080/api/analytics/" "Open Analytics API via Gateway"
+  click RP "http://localhost:8080/api/reports/" "Open Reporting API via Gateway"
+  click GW "../api-gateway/README.md" "API Gateway README"
+  click RG "../service-registry/README.md" "Service Registry README"
+  click CF "../config-server/README.md" "Config Server README"
+  click MN "../monitoring-service/README.md" "Monitoring Service README"
+  click LG "../logging-service/README.md" "Logging Service README"
+  click AD "../audit-service/README.md" "Audit Service README"
+  click BK "../backup-service/README.md" "Backup Service README"
+  click SC "../scheduler-service/README.md" "Scheduler Service README"
+  click DP "http://localhost:8080/api/pipeline/" "Open Data Pipeline API via Gateway"
+```
+
+### 🌐 Deployment Topology
+
+```mermaid
+graph TB
+  subgraph Cluster
+    subgraph Namespace: ecommerce
+      GW((Gateway))
+      RG((Eureka))
+      CF((Config))
+      US[(User)]
+      AS[(Auth)]
+      PR[(Product)]
+      IV[(Inventory)]
+      CT[(Cart)]
+      OR[(Order)]
+      PM[(Payment)]
+      DV[(Delivery)]
+      NT[(Notification)]
+      SR[(Search)]
+      RC[(Recommend)]
+      AN[(Analytics)]
+      RP[(Reporting)]
+      AD[(Audit)]
+      BK[(Backup)]
+      SC[(Scheduler)]
+      DP[(Data Pipeline)]
+      MN[(Monitoring)]
+      LG[(Logging)]
+    end
+  end
+  GW-->US & PR & CT & OR & PM
+  OR-->DV & NT
+  PR-->SR & RC
+  DP-->AN & RP
+  US-->AD
+```
+
 ---
 
 ## 2) Service Catalog and Responsibilities
