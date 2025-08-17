@@ -25,4 +25,23 @@ public class OrderController {
     public OrderDto createOrder(@RequestBody OrderDto orderDto) {
         return orderService.createOrder(orderDto);
     }
+    
+    @PutMapping("/{orderId}/confirm")
+    @ResponseStatus(HttpStatus.OK)
+    public OrderDto confirmOrder(@PathVariable String orderId, @RequestParam String paymentMethodId) {
+        return orderService.confirmOrder(orderId, paymentMethodId);
+    }
+    
+    @PutMapping("/{orderId}/cancel")
+    @ResponseStatus(HttpStatus.OK)
+    public OrderDto cancelOrder(@PathVariable String orderId) {
+        return orderService.cancelOrder(orderId);
+    }
+    
+    @GetMapping("/{orderId}")
+    @ResponseStatus(HttpStatus.OK)
+    public OrderDto getOrder(@PathVariable String orderId) {
+        return orderService.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+    }
 }

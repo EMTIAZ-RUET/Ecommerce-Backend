@@ -1,6 +1,6 @@
-C:\Iron-Software-Challenge\auth-service\src\main\java\com\ironsoftware\authservice\config\SecurityConfig.java
-C:\Iron-Software-Challenge\auth-service\src\main\java\com\ironsoftware\authservice\service\KeycloakService.java
-C:\Iron-Software-Challenge\auth-service\src\main\java\com\ironsoftware\authservice\dto\RegisterRequest.java
-C:\Iron-Software-Challenge\auth-service\src\main\java\com\ironsoftware\authservice\controller\AuthController.java
-C:\Iron-Software-Challenge\auth-service\src\main\java\com\ironsoftware\authservice\dto\TokenResponse.java
-C:\Iron-Software-Challenge\auth-service\src\main\java\com\ironsoftware\authservice\dto\LoginRequest.java
+C:\Ecommerce-Backend\auth-service\src\main\java\com\ironsoftware\authservice\dto\LoginRequest.java
+C:\Ecommerce-Backend\auth-service\src\main\java\com\ironsoftware\authservice\controller\AuthController.java
+C:\Ecommerce-Backend\auth-service\src\main\java\com\ironsoftware\authservice\dto\RegisterRequest.java
+C:\Ecommerce-Backend\auth-service\src\main\java\com\ironsoftware\authservice\dto\TokenResponse.java
+C:\Ecommerce-Backend\auth-service\src\main\java\com\ironsoftware\authservice\config\SecurityConfig.java
+C:\Ecommerce-Backend\auth-service\src\main\java\com\ironsoftware\authservice\service\KeycloakService.java

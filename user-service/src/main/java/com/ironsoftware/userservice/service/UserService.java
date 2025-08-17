@@ -154,4 +154,14 @@ public class UserService {
                 .updatedAt(user.getUpdatedAt())
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    public boolean userExists(String userId) {
+        try {
+            Long id = Long.parseLong(userId);
+            return userRepository.existsById(id);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 }

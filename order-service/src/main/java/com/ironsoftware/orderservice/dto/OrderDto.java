@@ -21,4 +21,6 @@ public class OrderDto {
     private OrderStatus status;
     private Instant createdAt;
     private List<OrderItemDto> items;
+    private String shippingAddress;
+    private String paymentMethodId;
 }

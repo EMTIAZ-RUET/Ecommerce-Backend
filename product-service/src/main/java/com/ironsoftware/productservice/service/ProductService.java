@@ -91,9 +91,8 @@ public class ProductService {
                 .name(product.getName())
                 .description(product.getDescription())
                 .price(product.getPrice())
-                .quantity(product.getStock())
                 .category(product.getCategory())
-                // Additional fields can be mapped here as needed
+                .quantity(product.getStock())
                 .build();
     }
 
@@ -173,5 +172,10 @@ public class ProductService {
         productVariantRepository.save(variant);
         
         log.info("Stock updated for variant ID: {} to {}", variantId, newStock);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean productExists(String id) {
+        return productRepository.existsById(id);
     }
 }

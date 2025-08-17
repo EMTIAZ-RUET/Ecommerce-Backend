@@ -38,25 +38,37 @@ public class InventoryService {
     }
 
     @Transactional
-    @KafkaListener(topics = "order-created", groupId = "inventory-group")
-    public void handleOrderCreated(OrderCreatedEvent event) {
-        // Process each item in the order
+    @KafkaListener(topics = "order-confirmed", groupId = "inventory-group")
+    public void handleOrderConfirmed(OrderCreatedEvent event) {
+        // Convert reserved stock to sold when order is confirmed
         event.getItems().forEach(orderItem -> {
             InventoryItem item = inventoryRepository.findById(orderItem.getProductId())
                     .orElseThrow(() -> new RuntimeException("Product not found in inventory: " + orderItem.getProductId()));
 
-            if (item.getQuantity() < orderItem.getQuantity()) {
-                throw new RuntimeException("Insufficient inventory for product: " + orderItem.getProductId());
-            }
-
-            item.setQuantity(item.getQuantity() - orderItem.getQuantity());
-            item.setReservedQuantity(item.getReservedQuantity() + orderItem.getQuantity());
+            // Reduce reserved quantity (stock was already reserved during order creation)
+            int currentReserved = item.getReservedQuantity();
+            int newReserved = Math.max(0, currentReserved - orderItem.getQuantity());
+            item.setReservedQuantity(newReserved);
             
             updateInventoryStatus(item);
             inventoryRepository.save(item);
             
-            log.info("Updated inventory for product: {}, remaining quantity: {}",
-                    orderItem.getProductId(), item.getQuantity());
+            log.info("Confirmed inventory for product: {}, reserved quantity reduced to: {}",
+                    orderItem.getProductId(), item.getReservedQuantity());
+        });
+    }
+    
+    @Transactional
+    @KafkaListener(topics = "order-cancelled", groupId = "inventory-group")
+    public void handleOrderCancelled(OrderCreatedEvent event) {
+        // Release reserved stock when order is cancelled
+        event.getItems().forEach(orderItem -> {
+            try {
+                releaseReservation(orderItem.getProductId(), orderItem.getQuantity());
+                log.info("Released inventory reservation for cancelled order, product: {}", orderItem.getProductId());
+            } catch (Exception e) {
+                log.error("Failed to release inventory reservation for product: {}", orderItem.getProductId(), e);
+            }
         });
     }
 
@@ -88,5 +100,52 @@ public class InventoryService {
                 .status(item.getStatus())
                 .isAvailable(availableQuantity > 0)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean checkAvailability(String productId, int quantity) {
+        InventoryItem item = inventoryRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found in inventory: " + productId));
+        
+        int availableQuantity = item.getQuantity() - item.getReservedQuantity();
+        return availableQuantity >= quantity;
+    }
+
+    @Transactional
+    @CacheEvict(value = "inventory", key = "#productId")
+    public void reserveStock(String productId, int quantity) {
+        InventoryItem item = inventoryRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found in inventory: " + productId));
+        
+        int availableQuantity = item.getQuantity() - item.getReservedQuantity();
+        if (availableQuantity < quantity) {
+            throw new RuntimeException("Insufficient inventory for product: " + productId + 
+                    ". Available: " + availableQuantity + ", Requested: " + quantity);
+        }
+        
+        // Reserve stock by increasing reserved quantity
+        item.setReservedQuantity(item.getReservedQuantity() + quantity);
+        updateInventoryStatus(item);
+        inventoryRepository.save(item);
+        
+        log.info("Reserved {} units for product: {}, total reserved: {}", 
+                quantity, productId, item.getReservedQuantity());
+    }
+
+    @Transactional
+    @CacheEvict(value = "inventory", key = "#productId")
+    public void releaseReservation(String productId, int quantity) {
+        InventoryItem item = inventoryRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found in inventory: " + productId));
+        
+        int currentReserved = item.getReservedQuantity();
+        int newReserved = Math.max(0, currentReserved - quantity);
+        item.setReservedQuantity(newReserved);
+        
+        updateInventoryStatus(item);
+        inventoryRepository.save(item);
+        
+        log.info("Released {} units for product: {}, total reserved: {}", 
+                quantity, productId, item.getReservedQuantity());
     }
 }

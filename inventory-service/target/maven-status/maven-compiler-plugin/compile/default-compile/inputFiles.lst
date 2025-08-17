@@ -1,8 +1,8 @@
-C:\Iron-Software-Challenge\inventory-service\src\main\java\com\ironsoftware\inventoryservice\config\CacheConfig.java
-C:\Iron-Software-Challenge\inventory-service\src\main\java\com\ironsoftware\inventoryservice\controller\InventoryController.java
-C:\Iron-Software-Challenge\inventory-service\src\main\java\com\ironsoftware\inventoryservice\dto\InventoryResponse.java
-C:\Iron-Software-Challenge\inventory-service\src\main\java\com\ironsoftware\inventoryservice\InventoryServiceApplication.java
-C:\Iron-Software-Challenge\inventory-service\src\main\java\com\ironsoftware\inventoryservice\model\InventoryItem.java
-C:\Iron-Software-Challenge\inventory-service\src\main\java\com\ironsoftware\inventoryservice\model\InventoryStatus.java
-C:\Iron-Software-Challenge\inventory-service\src\main\java\com\ironsoftware\inventoryservice\repository\InventoryRepository.java
-C:\Iron-Software-Challenge\inventory-service\src\main\java\com\ironsoftware\inventoryservice\service\InventoryService.java
+C:\Ecommerce-Backend\inventory-service\src\main\java\com\ironsoftware\inventoryservice\config\CacheConfig.java
+C:\Ecommerce-Backend\inventory-service\src\main\java\com\ironsoftware\inventoryservice\controller\InventoryController.java
+C:\Ecommerce-Backend\inventory-service\src\main\java\com\ironsoftware\inventoryservice\dto\InventoryResponse.java
+C:\Ecommerce-Backend\inventory-service\src\main\java\com\ironsoftware\inventoryservice\InventoryServiceApplication.java
+C:\Ecommerce-Backend\inventory-service\src\main\java\com\ironsoftware\inventoryservice\model\InventoryItem.java
+C:\Ecommerce-Backend\inventory-service\src\main\java\com\ironsoftware\inventoryservice\model\InventoryStatus.java
+C:\Ecommerce-Backend\inventory-service\src\main\java\com\ironsoftware\inventoryservice\repository\InventoryRepository.java
+C:\Ecommerce-Backend\inventory-service\src\main\java\com\ironsoftware\inventoryservice\service\InventoryService.java

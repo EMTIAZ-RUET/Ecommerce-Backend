@@ -49,4 +49,10 @@ public class ProductController {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/exists/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public boolean productExists(@PathVariable String id) {
+        return productService.productExists(id);
+    }
 }

@@ -32,4 +32,22 @@ public class InventoryController {
     public InventoryResponse updateInventory(@RequestBody InventoryItem item) {
         return inventoryService.updateInventory(item);
     }
+
+    @GetMapping("/check/{productId}")
+    @ResponseStatus(HttpStatus.OK)
+    public boolean checkAvailability(@PathVariable String productId, @RequestParam int quantity) {
+        return inventoryService.checkAvailability(productId, quantity);
+    }
+
+    @PostMapping("/reserve/{productId}")
+    @ResponseStatus(HttpStatus.OK)
+    public void reserveStock(@PathVariable String productId, @RequestParam int quantity) {
+        inventoryService.reserveStock(productId, quantity);
+    }
+
+    @PostMapping("/release/{productId}")
+    @ResponseStatus(HttpStatus.OK)
+    public void releaseReservation(@PathVariable String productId, @RequestParam int quantity) {
+        inventoryService.releaseReservation(productId, quantity);
+    }
 }

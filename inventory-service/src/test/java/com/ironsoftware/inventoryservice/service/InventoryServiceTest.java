@@ -163,17 +163,17 @@ class InventoryServiceTest {
     }
 
     @Test
-    void handleOrderCreated_ShouldProcessAllItems_WhenValidOrder() {
+    void handleOrderConfirmed_ShouldReduceReservedQuantity_WhenValidOrder() {
         // Given
-        when(inventoryRepository.findByProductId(anyString())).thenReturn(Optional.of(testInventoryItem));
+        when(inventoryRepository.findById(anyString())).thenReturn(Optional.of(testInventoryItem));
         when(inventoryRepository.save(any(InventoryItem.class))).thenReturn(testInventoryItem);
 
         // When
-        inventoryService.handleOrderCreated(orderCreatedEvent);
+        inventoryService.handleOrderConfirmed(orderCreatedEvent);
 
         // Then
         verify(inventoryRepository).save(any(InventoryItem.class));
-        verify(kafkaTemplate).send(anyString(), any());
+        assertEquals(0, testInventoryItem.getReservedQuantity());
     }
 
     @Test

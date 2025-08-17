@@ -40,6 +40,9 @@ public class OrderItem {
     @Column(nullable = false)
     private BigDecimal subtotal;
     
+    @Column(name = "variant_id")
+    private String variantId;
+    
     @CreationTimestamp
     @Column(name = "created_at")
     private Instant createdAt;

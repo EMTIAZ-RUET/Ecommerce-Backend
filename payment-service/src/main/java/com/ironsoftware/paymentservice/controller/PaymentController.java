@@ -16,7 +16,7 @@ import java.util.List;
 public class PaymentController {
     private final PaymentService paymentService;
 
-    @PostMapping("/process")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public PaymentResponse processPayment(@Valid @RequestBody PaymentRequest request) {
         return paymentService.processPayment(request);
