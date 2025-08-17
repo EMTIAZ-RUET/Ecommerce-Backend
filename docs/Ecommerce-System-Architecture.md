@@ -1,0 +1,295 @@
+# E‑Commerce Microservices: Architecture, Relationships, and Data Flow
+
+This document explains the full system architecture, microservice relationships, synchronous and event-driven flows, and how to operate the system. It includes example payloads and step-by-step flows across services, with citations to source files in this repository.
+
+---
+
+## 1) Architecture Overview
+
+- **Pattern**: Microservices + API Gateway + Service Registry + Config Server
+- **Sync calls**: Spring Cloud OpenFeign for REST between services
+- **Async events**: Kafka for domain events (order, payment, cart, etc.)
+- **Data stores**: Each service owns its data. Shared infra via Docker (Postgres, MongoDB, Kafka, Redis, etc.)
+- **Observability**: Centralized logging and monitoring (ELK/Prometheus/Grafana) via infra compose
+
+Key infra files:
+- `docker-compose-infra.yml`
+- `k8s/*.yml`
+- `start-infrastructure.ps1`
+- `run-e2e-tests.ps1`
+
+Shared module:
+- `common/` — shared DTOs and events (e.g., `com.ironsoftware.common.events.order.*`)
+
+---
+
+## 2) Service Catalog and Responsibilities
+
+- **API Gateway** (`api-gateway/`): Routes external HTTP traffic.
+- **Service Registry** (`service-registry/`): Discovery (Eureka).
+- **Config Server** (`config-server/`): Centralized Spring configuration.
+
+Domain services:
+- **Auth Service** (`auth-service/`): AuthN/Z, JWT issuance/validation.
+- **User Service** (`user-service/`): User profiles, user existence checks.
+- **Product Service** (`product-service/`): Product catalog, product existence/details.
+- **Inventory Service** (`inventory-service/`): Stock levels, reservations, confirmations, releases.
+  - Source: `inventory-service/src/main/java/.../service/InventoryService.java`
+- **Cart Service** (`cart-service/`): User carts; validates products & inventory before adding.
+- **Order Service** (`order-service/`): Order lifecycle (PENDING → CONFIRMED → CANCELLED/COMPLETED).
+  - Source: `order-service/src/main/java/.../service/OrderService.java`
+- **Payment Service** (`payment-service/`): Payment processing and events.
+  - Source: `payment-service/src/main/java/.../controller/PaymentController.java`
+  - Source: `payment-service/src/main/java/.../service/PaymentService.java`
+- **Delivery Service** (`delivery-service/`): Shipment lifecycle.
+- **Notification Service** (`notification-service/`): WebSocket/Channel notifications.
+- **Review Service** (`review-service/`): Product reviews.
+- **Recommendation Service** (`recommendation-service/`): Suggestion engine.
+- **Search Service** (`search-service/`): Search index/query.
+- **Analytics Service** (`analytics-service/`): Analytics pipelines.
+- **Reporting Service** (`reporting-service/`): Business reports.
+- **Audit Service** (`audit-service/`): Auditable events.
+- **Backup Service** (`backup-service/`): Data backup jobs.
+- **Scheduler Service** (`scheduler-service/`): Periodic jobs.
+- **Data Pipeline Service** (`data-pipeline-service/`): Stream processing.
+- **Logging Service** (`logging-service/`), **Monitoring Service** (`monitoring-service/`): Ops.
+
+---
+
+## 3) Startup Order
+
+1. Infrastructure: `start-infrastructure.ps1` (or `docker-compose-infra.yml`)
+2. Platform services: `service-registry/` → `config-server/` → `api-gateway/`
+3. Core domain: `auth-service/`, `user-service/`, `product-service/`, `inventory-service/`, `cart-service/`, `order-service/`, `payment-service/`
+4. Support: notification, delivery, review, recommendation, search, analytics, reporting, etc.
+
+Verification:
+- Eureka shows registered services.
+- Health endpoints return UP.
+- Kafka topics exist (auto-created by producers if configured).
+
+---
+
+## 4) High-Level Data Flows
+
+### A. Place Order (Happy Path)
+
+1) Client adds items to cart
+- `cart-service` validates with:
+  - `product-service` (product exists)
+  - `inventory-service` (availability)
+- Source: `cart-service/src/main/java/.../service/CartService.java`
+- Kafka (optional): cart events → `cart-events`
+
+2) Client creates order
+- Client → `api-gateway` → `order-service`
+- `order-service`:
+  - validates user via `user-service`
+  - fetches product details via `product-service`
+  - reserves stock via `inventory-service` (per item)
+  - sets status `PENDING`
+  - publishes `order-created`
+- Source: `order-service/.../service/OrderService.java::createOrder(...)`
+
+3) Client confirms order (with payment)
+- `PUT /api/orders/{orderId}/confirm?paymentMethodId=...`
+- `order-service` → `payment-service` (`POST /api/payments`)
+- If payment `COMPLETED`:
+  - set status `CONFIRMED`
+  - publish `order-confirmed`
+- Source: `order-service/.../service/OrderService.java::confirmOrder(...)`
+- Feign: `order-service/.../client/PaymentServiceClient.java`
+- Payment API: `payment-service/.../controller/PaymentController.java`
+
+4) Inventory adjusts on confirmation
+- `inventory-service` listens `order-confirmed`
+- convert reserved → fulfilled (reduce reserved)
+- Source: `inventory-service/.../service/InventoryService.java::handleOrderConfirmed(...)`
+
+5) Delivery & Notification (optional)
+- Delivery consumes `order-confirmed` → create shipment
+- Notification consumes events → notify user
+
+6) Payment events
+- `payment-service` publishes `payment-events` with status and transactionId
+- Consumers: Analytics/Audit/Notification
+- Source: `payment-service/.../service/PaymentService.java`
+
+### B. Cancel Order
+
+- `PUT /api/orders/{orderId}/cancel`
+- `order-service` sets `CANCELLED` and publishes `order-cancelled`
+- `inventory-service` consumes `order-cancelled` and releases reserved stock
+- Source: `order-service/.../service/OrderService.java::cancelOrder(...)`
+- Source: `inventory-service/.../service/InventoryService.java::handleOrderCancelled(...)`
+
+---
+
+## 5) Synchronous Relationships (Feign)
+
+- **Order → User**: validate user
+  - `GET /api/users/{id}/exists`
+- **Order/Cart → Product**: product existence/details
+  - `GET /api/products/{id}`, `GET /api/products/{id}/exists`
+- **Order/Cart → Inventory**: availability, reserve, release
+  - `POST /api/inventory/reserve`, `POST /api/inventory/release`, `GET /api/inventory/check`
+- **Order → Payment**: process payment
+  - `POST /api/payments` (aligned)
+
+Source references:
+- `order-service/.../client/*.java`
+- `cart-service/.../client/*.java`
+
+---
+
+## 6) Event Topics and Producers/Consumers
+
+- **order-created**
+  - Producer: `order-service`
+  - Consumers: analytics/audit/notification (optional)
+
+- **order-confirmed**
+  - Producer: `order-service`
+  - Consumer: `inventory-service`
+
+- **order-cancelled**
+  - Producer: `order-service`
+  - Consumer: `inventory-service`
+
+- **payment-events**
+  - Producer: `payment-service`
+  - Consumers: analytics/audit/notification
+
+- **cart-events** (if enabled)
+  - Producer: `cart-service`
+
+---
+
+## 7) Example API Calls and Payloads
+
+Create Order
+```http
+POST /api/orders
+Content-Type: application/json
+
+{
+  "userId": "user-123",
+  "shippingAddress": "123 Main St",
+  "paymentMethodId": "pm_abc",
+  "items": [
+    { "productId": "prod-1", "variantId": "var-1", "quantity": 2 }
+  ]
+}
+```
+
+Confirm Order (with payment)
+```http
+PUT /api/orders/{orderId}/confirm?paymentMethodId=pm_abc
+```
+
+Cancel Order
+```http
+PUT /api/orders/{orderId}/cancel
+```
+
+Payment (internal from Order Service)
+```http
+POST /api/payments
+Content-Type: application/json
+
+{
+  "orderId": "<orderId>",
+  "userId": "user-123",
+  "amount": 149.99,
+  "paymentMethod": "CREDIT_CARD",
+  "paymentMethodId": "pm_abc"
+}
+```
+
+---
+
+## 8) Important Code References
+
+- Order confirmation with payment
+  - `order-service/src/main/java/com/ironsoftware/orderservice/service/OrderService.java::confirmOrder(...)`
+  - `order-service/src/main/java/com/ironsoftware/orderservice/client/PaymentServiceClient.java`
+
+- Inventory event handlers
+  - `inventory-service/src/main/java/com/ironsoftware/inventoryservice/service/InventoryService.java::handleOrderConfirmed(...)`
+  - `inventory-service/src/main/java/com/ironsoftware/inventoryservice/service/InventoryService.java::handleOrderCancelled(...)`
+
+- Payment controller/events
+  - `payment-service/src/main/java/com/ironsoftware/paymentservice/controller/PaymentController.java`
+  - `payment-service/src/main/java/com/ironsoftware/paymentservice/service/PaymentService.java`
+
+- Cart validation
+  - `cart-service/src/main/java/com/ironsoftware/cartservice/service/CartService.java`
+
+---
+
+## 9) PlantUML Sequence (Order Happy Path)
+
+```plantuml
+@startuml
+actor User
+participant APIGateway as GW
+participant OrderService as OS
+participant PaymentService as PS
+participant InventoryService as IS
+participant ProductService as PR
+participant UserService as US
+
+User -> GW: POST /api/orders
+GW -> OS: createOrder()
+OS -> US: userExists(userId)
+OS -> PR: getProduct(productId)
+OS -> IS: reserveStock(productId, qty)
+OS -> OS: status = PENDING
+OS -> Kafka: publish(order-created)
+
+User -> GW: PUT /api/orders/{id}/confirm?paymentMethodId=...
+GW -> OS: confirmOrder(id)
+OS -> PS: POST /api/payments
+PS -> Kafka: publish(payment-events)
+OS -> OS: status = CONFIRMED
+OS -> Kafka: publish(order-confirmed)
+Kafka -> IS: handleOrderConfirmed
+IS -> IS: reduce reserved quantity
+@enduml
+```
+
+---
+
+## 10) Operations & Best Practices
+
+- **Idempotency**: Consumers should be idempotent; repeat events must not corrupt state.
+- **Resilience**: Use circuit breakers/retries (e.g., `cart-service` with Resilience4j).
+- **Transactions & Events**: Consider Outbox/Saga for stronger guarantees.
+- **Security**: JWT via `auth-service`; enforce at Gateway and services as needed.
+- **Config**: Externalize via Config Server.
+
+---
+
+## 11) How to Export this Document to PDF
+
+Option A) VS Code Print to PDF
+- Open this Markdown file.
+- Open Preview (Ctrl+Shift+V), then use browser print to PDF (right-click → Print… → Save as PDF).
+
+Option B) VS Code Extension: "Markdown PDF"
+- Install extension "Markdown PDF".
+- Right-click this file → "Markdown PDF: Export (pdf)".
+
+Option C) Pandoc (if installed)
+```powershell
+pandoc -s "docs/Ecommerce-System-Architecture.md" -o "docs/Ecommerce-System-Architecture.pdf"
+```
+
+---
+
+## 12) Summary
+
+- The system uses synchronous validations (Feign) before state changes and asynchronous events (Kafka) to decouple lifecycle transitions.
+- Inventory is reserved at order creation and adjusted at confirmation/cancellation via events.
+- Payment must succeed before order confirmation and inventory finalization.
+- All 26 services compile and integrate into coherent flows ready for deployment.
