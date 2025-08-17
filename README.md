@@ -8,11 +8,31 @@
 ![Docker](https://img.shields.io/badge/Docker-Enabled-blue?style=for-the-badge&logo=docker)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-Ready-326CE5?style=for-the-badge&logo=kubernetes)
 
-**🚀 A comprehensive, production-ready e-commerce platform built with 24 microservices**
+ **🚀 A comprehensive, production-ready e-commerce platform built with 24 microservices**
 
-*Featuring event-driven architecture, real-time processing, and enterprise-grade scalability*
+ *Featuring event-driven architecture, real-time processing, and enterprise-grade scalability*
 
-</div>
+ </div>
+
+ <div align="center">
+ 
+ <svg width="100%" height="140" viewBox="0 0 1200 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="E-Commerce Microservices Banner">
+   <defs>
+     <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+       <stop offset="0%" style="stop-color:#2E7D32;stop-opacity:1"/>
+       <stop offset="50%" style="stop-color:#1976D2;stop-opacity:1"/>
+       <stop offset="100%" style="stop-color:#6A1B9A;stop-opacity:1"/>
+     </linearGradient>
+     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+       <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.25"/>
+     </filter>
+   </defs>
+   <rect x="10" y="10" rx="14" ry="14" width="1180" height="120" fill="url(#grad)" filter="url(#shadow)"/>
+   <text x="600" y="68" text-anchor="middle" font-family="Segoe UI, Roboto, Arial" font-size="28" font-weight="700" fill="#FFFFFF">Production-Grade E-Commerce Microservices</text>
+   <text x="600" y="98" text-anchor="middle" font-family="Segoe UI, Roboto, Arial" font-size="16" fill="#E3F2FD">Java • Spring Boot • Kafka • Docker • Kubernetes</text>
+ </svg>
+ 
+ </div>
 
 ---
 
@@ -509,9 +529,99 @@ sequenceDiagram
 
 ---
 
-## 🗺️ Visualizations
-
-### 🧩 Component Architecture
+ ## 🗺️ Visualizations
+ 
+ <div align="center">
+ 
+ <svg width="760" height="320" viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Service Map">
+   <style>
+     .node{fill:#FFFFFF;stroke:#1976D2;stroke-width:1.5;rx:8;ry:8}
+     .core{stroke:#2E7D32}
+     .adv{stroke:#6A1B9A}
+     .plat{stroke:#455A64}
+     .lbl{font: 12px Segoe UI, Arial; fill:#263238}
+     .title{font: 14px Segoe UI, Arial; font-weight:700}
+     .arrow{stroke:#78909C;stroke-width:1.2;marker-end:url(#arrowhead)}
+     a:hover text{ text-decoration: underline; }
+     a{ cursor: pointer; }
+   </style>
+   <defs>
+     <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+       <polygon points="0 0, 10 3.5, 0 7" fill="#78909C"/>
+     </marker>
+   </defs>
+   
+   <!-- Platform -->
+  <a href="api-gateway/README.md">
+    <rect class="node plat" x="320" y="20" width="120" height="34"/>
+    <text class="title" x="380" y="42" text-anchor="middle">API Gateway</text>
+  </a>
+  <a href="service-registry/README.md">
+    <rect class="node plat" x="160" y="20" width="120" height="34"/>
+    <text class="lbl" x="220" y="42" text-anchor="middle">Service Registry</text>
+  </a>
+  <a href="config-server/README.md">
+    <rect class="node plat" x="480" y="20" width="120" height="34"/>
+    <text class="lbl" x="540" y="42" text-anchor="middle">Config Server</text>
+  </a>
+ 
+   <!-- Core row -->
+  <a href="user-service/README.md">
+    <rect class="node core" x="40" y="110" width="120" height="34"/>
+    <text class="lbl" x="100" y="132" text-anchor="middle">User</text>
+  </a>
+  <a href="product-service/README.md">
+    <rect class="node core" x="200" y="110" width="120" height="34"/>
+    <text class="lbl" x="260" y="132" text-anchor="middle">Product</text>
+  </a>
+  <a href="cart-service/README.md">
+    <rect class="node core" x="360" y="110" width="120" height="34"/>
+    <text class="lbl" x="420" y="132" text-anchor="middle">Cart</text>
+  </a>
+  <a href="order-service/README.md">
+    <rect class="node core" x="520" y="110" width="120" height="34"/>
+    <text class="lbl" x="580" y="132" text-anchor="middle">Order</text>
+  </a>
+  <a href="payment-service/README.md">
+    <rect class="node core" x="680" y="110" width="120" height="34"/>
+    <text class="lbl" x="740" y="132" text-anchor="middle">Payment</text>
+  </a>
+ 
+   <!-- Advanced row -->
+  <a href="inventory-service/README.md">
+    <rect class="node adv" x="120" y="200" width="120" height="34"/>
+    <text class="lbl" x="180" y="222" text-anchor="middle">Inventory</text>
+  </a>
+  <a href="delivery-service/README.md">
+    <rect class="node adv" x="280" y="200" width="120" height="34"/>
+    <text class="lbl" x="340" y="222" text-anchor="middle">Delivery</text>
+  </a>
+  <a href="notification-service/README.md">
+    <rect class="node adv" x="440" y="200" width="120" height="34"/>
+    <text class="lbl" x="500" y="222" text-anchor="middle">Notification</text>
+  </a>
+  <a href="search-service/README.md">
+    <rect class="node adv" x="600" y="200" width="120" height="34"/>
+    <text class="lbl" x="660" y="222" text-anchor="middle">Search</text>
+  </a>
+ 
+   <!-- Lines from Gateway to core services -->
+   <line class="arrow" x1="380" y1="54" x2="100" y2="110"/>
+   <line class="arrow" x1="380" y1="54" x2="260" y2="110"/>
+   <line class="arrow" x1="380" y1="54" x2="420" y2="110"/>
+   <line class="arrow" x1="380" y1="54" x2="580" y2="110"/>
+   <line class="arrow" x1="380" y1="54" x2="740" y2="110"/>
+ 
+   <!-- Inter-service arrows -->
+   <line class="arrow" x1="420" y1="144" x2="180" y2="200"/> <!-- Cart -> Inventory -->
+   <line class="arrow" x1="580" y1="144" x2="340" y2="200"/> <!-- Order -> Delivery -->
+   <line class="arrow" x1="580" y1="144" x2="500" y2="200"/> <!-- Order -> Notification -->
+   <line class="arrow" x1="260" y1="144" x2="660" y2="200"/> <!-- Product -> Search -->
+ </svg>
+ 
+ </div>
+ 
+ ### 🧩 Component Architecture
 
 ```mermaid
 graph LR
@@ -619,6 +729,16 @@ graph TB
 - 🔴 **Redis 7.0+**
 - 📨 **Apache Kafka 3.5+**
 
+### 🪟 Windows Quick Start (PowerShell)
+
+```powershell
+# Start infrastructure (databases, Kafka, etc.)
+./start-infrastructure.ps1
+
+# If you see "running scripts is disabled" error, enable scripts for current user:
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
 ### 🛠️ **Installation Steps**
 
 #### 1️⃣ **Clone the Repository**
@@ -673,6 +793,36 @@ curl http://localhost:8080/actuator/health
 # Run E2E tests
 java -cp . StandaloneE2EDemo
 ```
+
+---
+
+## ⚙️ Environment Variables & Profiles
+
+- Spring profiles: `dev`, `docker`, `prod` (set via `SPRING_PROFILES_ACTIVE`)
+- Common environment variables (sample):
+
+```env
+# Kafka
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+
+# Postgres
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=ecom
+POSTGRES_PASSWORD=secret
+
+# Mongo
+MONGO_URI=mongodb://localhost:27017/ecommerce
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# Security
+JWT_SECRET=change_me
+```
+
+Configure service-specific variables in each service's `application.yml` or via the Config Server.
 
 ---
 
@@ -767,10 +917,35 @@ kubectl get services
 - **Postman Collection**: Available in `/docs/postman/`
 
 ### 📖 **Documentation**
-- **Architecture Guide**: `/docs/architecture.md`
+- **Architecture Guide**: `/docs/Ecommerce-System-Architecture.md`
 - **Deployment Guide**: `/docs/deployment.md`
 - **API Reference**: `/docs/api-reference.md`
 - **Troubleshooting**: `/docs/troubleshooting.md`
+
+### 🧪 Smoke Test (Postman)
+- Collection: `/docs/postman/CoreFlows.postman_collection.json`
+- Environment: `/docs/postman/DevEnvironment.postman_environment.json`
+
+Steps:
+1. Import the environment, then the collection.
+2. Select "Ecommerce Dev" environment.
+3. Run in order: Add Item to Cart → Create Order → Confirm Order.
+4. (Optional) Run Cancel Order to test rollback and inventory release.
+
+---
+
+## 🛠️ Troubleshooting
+
+- **PowerShell execution policy (Windows):** If `profile.ps1 cannot be loaded` or `running scripts is disabled`, run:
+  ```powershell
+  Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+  ```
+- **Ports in use:** Services may fail if ports are occupied. Change ports in `application.yml` or stop conflicting processes.
+- **Kafka topics:** Ensure Kafka is running from `docker-compose-infra.yml`. Topics are auto-created by producers when configured; see `docs/Ecommerce-System-Architecture.md` (Event Topics section).
+- **Database initialization:**
+  - Postgres schemas: `init-databases.sql`
+  - Mongo seed & indexes: `mongo-init.js`
+- **Service discovery not showing services:** Start order matters — launch `service-registry` → `config-server` → `api-gateway` before business services.
 
 ---
 

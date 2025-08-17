@@ -1,47 +1,34 @@
 # User Service
 
 ## Overview
-The User Service is a foundational component of the e-commerce platform, responsible for managing all aspects of user identity and authentication. Its primary responsibilities include user registration, login, password reset, and profile management.
+Purpose: Manage user identities, profiles, and existence checks used by other services.
 
-## Key Features
-- User registration and authentication
-- JWT-based token generation and validation
-- User profile management
-- Role-based authorization
-- Event publishing for user-related events
+See also: `../docs/Ecommerce-System-Architecture.md`.
 
-## API Endpoints
-- `POST /api/auth/login` - Authenticate a user and generate JWT token
-- `POST /api/users/register` - Register a new user
-- `GET /api/users/{userId}` - Get user profile
-- `PUT /api/users/{userId}` - Update user profile
+## Run
+```bash
+mvn spring-boot:run -pl user-service
+```
 
-## Event Publishing
-The User Service publishes the following events to Kafka:
-- `user-registered` - When a new user is registered
-- `user-profile-updated` - When a user profile is updated
+## Key Endpoints
+```http
+POST /api/auth/login                  # Authenticate and get JWT
+POST /api/users/register              # Register new user
+GET  /api/users/{userId}              # Get user profile
+PUT  /api/users/{userId}              # Update user profile
+GET  /api/users/{userId}/exists       # Existence check (used by Order Service)
+```
 
-## Database
-The User Service uses PostgreSQL as its database for storing user information, providing ACID compliance necessary for handling sensitive user account information.
+## Events
+- Produces: `user-registered`, `user-profile-updated`
 
-## Security
-The service implements JWT-based authentication and role-based authorization. It securely stores password hashes and manages user sessions.
+## Health
+- `GET /actuator/health`
 
-## Dependencies
-- Spring Boot
-- Spring Security
-- Spring Data JPA
-- PostgreSQL
-- Kafka
-- Eureka Client
-- JWT
-
-## Configuration
-The service is configured via `application.yml` with the following key settings:
-- Server port: 8085
-- Database connection details
-- JWT secret and expiration
-- Kafka bootstrap servers
+## Notes
+- DB: PostgreSQL
+- Security: JWT-based auth, role-based authorization
+- Discovery: Eureka client
 
 ## Scalability
-The User Service is designed to be stateless, allowing it to be deployed as multiple instances behind a load balancer to handle a large number of concurrent authentication requests.
+Stateless; horizontally scalable behind a load balancer.

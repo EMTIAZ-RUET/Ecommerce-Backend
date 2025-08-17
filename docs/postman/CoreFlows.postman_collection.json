@@ -1,0 +1,77 @@
+{
+  "info": {
+    "name": "Ecommerce Core Flows",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Core checkout flows: cart add, order create, confirm, cancel"
+  },
+  "item": [
+    {
+      "name": "Add Item To Cart",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": {
+          "raw": "{{gatewayBaseUrl}}/api/carts/{{userId}}/items",
+          "host": [ "{{gatewayBaseUrl}}" ],
+          "path": [ "api", "carts", "{{userId}}", "items" ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"variantId\": \"{{variantId}}\",\n  \"quantity\": 2\n}"
+        }
+      }
+    },
+    {
+      "name": "Create Order",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": {
+          "raw": "{{gatewayBaseUrl}}/api/orders",
+          "host": [ "{{gatewayBaseUrl}}" ],
+          "path": [ "api", "orders" ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"shippingAddress\": \"123 Main St\",\n  \"paymentMethodId\": \"{{paymentMethodId}}\",\n  \"items\": [\n    { \"productId\": \"{{productId}}\", \"variantId\": \"{{variantId}}\", \"quantity\": 2 }\n  ]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.environment.set('orderId', json.id || json.orderId);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Confirm Order",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "{{gatewayBaseUrl}}/api/orders/{{orderId}}/confirm?paymentMethodId={{paymentMethodId}}",
+          "host": [ "{{gatewayBaseUrl}}" ],
+          "path": [ "api", "orders", "{{orderId}}", "confirm" ],
+          "query": [ { "key": "paymentMethodId", "value": "{{paymentMethodId}}" } ]
+        }
+      }
+    },
+    {
+      "name": "Cancel Order",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "{{gatewayBaseUrl}}/api/orders/{{orderId}}/cancel",
+          "host": [ "{{gatewayBaseUrl}}" ],
+          "path": [ "api", "orders", "{{orderId}}", "cancel" ]
+        }
+      }
+    }
+  ],
+  "variable": []
+}
