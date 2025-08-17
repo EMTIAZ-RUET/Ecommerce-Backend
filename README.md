@@ -470,6 +470,9 @@ sequenceDiagram
 - **Resilience**: Saga orchestration; compensations on failure (release stock, refund)
 
 ---
+<details>
+  <summary>Order → Inventory → Payment → Delivery (Saga)</summary>
+
 ```mermaid
 sequenceDiagram
   autonumber
@@ -491,6 +494,8 @@ sequenceDiagram
   end
 ```
 
+</details>
+
 ---
 
 ### 💳 **Payment Service** `Port: 8087`
@@ -511,6 +516,9 @@ sequenceDiagram
 - **Consumed by/Calls**: Called by `Order` for authorize/capture; emits events consumed by `Order` for state
 - **Resilience**: Idempotency keys; provider retries; webhook reconciliation
 
+<details>
+  <summary>Payment Service – Authorize/Capture Sequence</summary>
+
 ```mermaid
 sequenceDiagram
   autonumber
@@ -521,6 +529,8 @@ sequenceDiagram
   OS->>PS: POST /capture {paymentId}
   PS-->>OS: PaymentProcessed
 ```
+
+</details>
 
 #### Details
 - **Responsibilities**: Authorize/capture/refund payments; reconcile webhooks; publish payment status.
@@ -569,6 +579,9 @@ sequenceDiagram
 - **Resilience**: Outbox for webhooks; retry with backoff; DLQ for failed updates
 
 ---
+<details>
+  <summary>Delivery – Shipment Flow and Notifications</summary>
+
 ```mermaid
 sequenceDiagram
   autonumber
@@ -580,6 +593,8 @@ sequenceDiagram
   DV-->>OR: ShipmentCreated/Dispatched
   DV-->>NT: Delivery updates (events)
 ```
+
+</details>
 
 #### Details
 - **Responsibilities**: Create and manage shipments; integrate with carriers; update delivery status.
