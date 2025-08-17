@@ -23,6 +23,165 @@ Shared module:
 
 ---
 
+## Interactive Service Map
+
+<div align="center">
+ 
+<svg width="980" height="420" viewBox="0 0 980 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Service Map">
+  <style>
+    .node{fill:#FFFFFF;stroke:#1976D2;stroke-width:1.5;rx:8;ry:8}
+    .core{stroke:#2E7D32}
+    .adv{stroke:#6A1B9A}
+    .plat{stroke:#455A64}
+    .lbl{font: 12px Segoe UI, Arial; fill:#263238}
+    .title{font: 14px Segoe UI, Arial; font-weight:700}
+    .arrow{stroke:#78909C;stroke-width:1.2;marker-end:url(#arrowhead)}
+    a:hover text{ text-decoration: underline; }
+    a{ cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#78909C"/>
+    </marker>
+  </defs>
+  
+  <!-- Platform -->
+  <a href="../service-registry/README.md">
+    <rect class="node plat" x="180" y="20" width="140" height="34"/>
+    <text class="lbl" x="250" y="42" text-anchor="middle">Service Registry</text>
+  </a>
+  <a href="../api-gateway/README.md">
+    <rect class="node plat" x="360" y="20" width="140" height="34"/>
+    <text class="title" x="430" y="42" text-anchor="middle">API Gateway</text>
+  </a>
+  <a href="../config-server/README.md">
+    <rect class="node plat" x="540" y="20" width="140" height="34"/>
+    <text class="lbl" x="610" y="42" text-anchor="middle">Config Server</text>
+  </a>
+  
+  <!-- Platform (Infra) -->
+  <a href="../monitoring-service/README.md">
+    <rect class="node plat" x="140" y="70" width="140" height="34"/>
+    <text class="lbl" x="210" y="92" text-anchor="middle">Monitoring</text>
+  </a>
+  <a href="../logging-service/README.md">
+    <rect class="node plat" x="320" y="70" width="140" height="34"/>
+    <text class="lbl" x="390" y="92" text-anchor="middle">Logging</text>
+  </a>
+  <a href="../reporting-service/README.md">
+    <rect class="node plat" x="500" y="70" width="140" height="34"/>
+    <text class="lbl" x="570" y="92" text-anchor="middle">Reporting</text>
+  </a>
+  <a href="../audit-service/README.md">
+    <rect class="node plat" x="680" y="70" width="140" height="34"/>
+    <text class="lbl" x="750" y="92" text-anchor="middle">Audit</text>
+  </a>
+  <a href="../backup-service/README.md">
+    <rect class="node plat" x="860" y="70" width="100" height="34"/>
+    <text class="lbl" x="910" y="92" text-anchor="middle">Backup</text>
+  </a>
+ 
+  <!-- Core row -->
+  <a href="../user-service/README.md">
+    <rect class="node core" x="60" y="130" width="140" height="34"/>
+    <text class="lbl" x="130" y="152" text-anchor="middle">User</text>
+  </a>
+  <a href="../auth-service/README.md">
+    <rect class="node core" x="240" y="130" width="140" height="34"/>
+    <text class="lbl" x="310" y="152" text-anchor="middle">Auth</text>
+  </a>
+  <a href="../product-service/README.md">
+    <rect class="node core" x="420" y="130" width="140" height="34"/>
+    <text class="lbl" x="490" y="152" text-anchor="middle">Product</text>
+  </a>
+  <a href="../cart-service/README.md">
+    <rect class="node core" x="600" y="130" width="140" height="34"/>
+    <text class="lbl" x="670" y="152" text-anchor="middle">Cart</text>
+  </a>
+  <a href="../order-service/README.md">
+    <rect class="node core" x="780" y="130" width="140" height="34"/>
+    <text class="lbl" x="850" y="152" text-anchor="middle">Order</text>
+  </a>
+  <a href="../payment-service/README.md">
+    <rect class="node core" x="60" y="180" width="140" height="34"/>
+    <text class="lbl" x="130" y="202" text-anchor="middle">Payment</text>
+  </a>
+ 
+  <!-- Advanced rows -->
+  <a href="../inventory-service/README.md">
+    <rect class="node adv" x="240" y="230" width="140" height="34"/>
+    <text class="lbl" x="310" y="252" text-anchor="middle">Inventory</text>
+  </a>
+  <a href="../delivery-service/README.md">
+    <rect class="node adv" x="420" y="230" width="140" height="34"/>
+    <text class="lbl" x="490" y="252" text-anchor="middle">Delivery</text>
+  </a>
+  <a href="../notification-service/README.md">
+    <rect class="node adv" x="600" y="230" width="140" height="34"/>
+    <text class="lbl" x="670" y="252" text-anchor="middle">Notification</text>
+  </a>
+  <a href="../search-service/README.md">
+    <rect class="node adv" x="780" y="230" width="140" height="34"/>
+    <text class="lbl" x="850" y="252" text-anchor="middle">Search</text>
+  </a>
+  
+  <a href="../review-service/README.md">
+    <rect class="node adv" x="60" y="280" width="140" height="34"/>
+    <text class="lbl" x="130" y="302" text-anchor="middle">Review</text>
+  </a>
+  <a href="../recommendation-service/README.md">
+    <rect class="node adv" x="240" y="280" width="180" height="34"/>
+    <text class="lbl" x="330" y="302" text-anchor="middle">Recommendation</text>
+  </a>
+  <a href="../analytics-service/README.md">
+    <rect class="node adv" x="440" y="280" width="140" height="34"/>
+    <text class="lbl" x="510" y="302" text-anchor="middle">Analytics</text>
+  </a>
+  <a href="../reporting-service/README.md">
+    <rect class="node adv" x="620" y="280" width="140" height="34"/>
+    <text class="lbl" x="690" y="302" text-anchor="middle">Reporting</text>
+  </a>
+  
+  <!-- Infra extras -->
+  <a href="../audit-service/README.md">
+    <rect class="node plat" x="60" y="330" width="140" height="34"/>
+    <text class="lbl" x="130" y="352" text-anchor="middle">Audit</text>
+  </a>
+  <a href="../scheduler-service/README.md">
+    <rect class="node plat" x="240" y="330" width="140" height="34"/>
+    <text class="lbl" x="310" y="352" text-anchor="middle">Scheduler</text>
+  </a>
+  <a href="../data-pipeline-service/README.md">
+    <rect class="node plat" x="420" y="330" width="180" height="34"/>
+    <text class="lbl" x="510" y="352" text-anchor="middle">Data Pipeline</text>
+  </a>
+  <a href="../logging-service/README.md">
+    <rect class="node plat" x="620" y="330" width="140" height="34"/>
+    <text class="lbl" x="690" y="352" text-anchor="middle">Logging</text>
+  </a>
+  <a href="../monitoring-service/README.md">
+    <rect class="node plat" x="800" y="330" width="140" height="34"/>
+    <text class="lbl" x="870" y="352" text-anchor="middle">Monitoring</text>
+  </a>
+ 
+  <!-- Lines from Gateway to core services (illustrative) -->
+  <line class="arrow" x1="430" y1="54" x2="130" y2="130"/>
+  <line class="arrow" x1="430" y1="54" x2="310" y2="130"/>
+  <line class="arrow" x1="430" y1="54" x2="490" y2="130"/>
+  <line class="arrow" x1="430" y1="54" x2="670" y2="130"/>
+  <line class="arrow" x1="430" y1="54" x2="850" y2="130"/>
+ 
+  <!-- Inter-service arrows (illustrative) -->
+  <line class="arrow" x1="670" y1="164" x2="310" y2="230"/> <!-- Cart -> Inventory -->
+  <line class="arrow" x1="850" y1="164" x2="490" y2="230"/> <!-- Order -> Delivery -->
+  <line class="arrow" x1="850" y1="164" x2="670" y2="230"/> <!-- Order -> Notification -->
+  <line class="arrow" x1="490" y1="164" x2="850" y2="230"/> <!-- Product -> Search -->
+</svg>
+ 
+</div>
+
+---
+
 ## 2) Service Catalog and Responsibilities
 
 - **API Gateway** (`api-gateway/`): Routes external HTTP traffic.
