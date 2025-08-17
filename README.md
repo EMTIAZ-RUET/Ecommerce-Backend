@@ -531,12 +531,181 @@ sequenceDiagram
 
 ---
 
- ## 🗺️ Visualizations
+## 🗺️ Visualizations
+
+### 📚 Per‑Service Interaction Details
+
+The following summarizes how each service communicates with others. Sync traffic is via the API Gateway (`/api/<service>/…`). Async communication uses Kafka topics listed above.
+
+#### 👤 User Service
+- **Ingress (REST)**: `POST /api/users/register`, `GET /api/users/{id}`
+- **Egress (REST)**: Calls Auth for token validation when needed
+- **Async (publish)**: `UserRegistered`, `UserProfileUpdated`
+- **Async (consume)**: None
+- **Used by**: Order, Notification, Analytics, Audit
+
+#### 🔐 Auth Service
+- **Ingress (REST)**: `POST /api/auth/login`, `POST /api/auth/refresh`
+- **Egress (REST)**: N/A (stateless JWT)
+- **Async**: Emits auth audit logs via `Audit` where applicable
+- **Used by**: API Gateway (filters), all services (JWT validation)
+
+#### 📦 Product Service
+- **Ingress (REST)**: `GET /api/products`, `POST /api/products`
+- **Async (publish)**: `ProductCreated/Updated/Deleted`, `PriceChanged`
+- **Consumed by**: Search (reindex), Recommendation (model updates), Analytics/Reporting (facts), Inventory (stock association)
+
+#### 📊 Inventory Service
+- **Ingress (REST)**: `GET /api/inventory/{sku}`, `POST /api/inventory/reserve`
+- **Async (publish)**: `InventoryUpdated`, `LowStockAlert`
+- **Consumes**: `OrderCreated` (reserve), `OrderCancelled` (release)
+
+#### 🛒 Cart Service
+- **Ingress (REST)**: `POST /api/cart/items`, `DELETE /api/cart/items/{sku}`
+- **Egress (REST)**: Inventory stock check during add/update
+- **Async (publish)**: `ItemAddedToCart`, `ItemRemovedFromCart`, `CartAbandoned`
+- **Consumes**: Price updates from Product for recalculation
+
+#### 📋 Order Service
+- **Ingress (REST)**: `POST /api/orders`, `PUT /api/orders/{id}/cancel`
+- **Egress (REST)**: Payment (authorize/capture), Inventory (reserve/commit), Delivery (create shipment)
+- **Async (publish)**: `OrderCreated`, `OrderCompleted`, `OrderCancelled`
+- **Consumes**: `PaymentProcessed/Failed` to decide commit/rollback
+
+#### 💳 Payment Service
+- **Ingress (REST)**: `POST /api/payments/authorize`, `POST /api/payments/capture`
+- **Async (publish)**: `PaymentProcessed`, `PaymentFailed`, `RefundIssued`
+- **Consumes**: `OrderCreated` (optional: pre‑auth), `OrderCancelled` (refund)
+
+#### 🚛 Delivery Service
+- **Ingress (REST)**: `POST /api/delivery/shipments`
+- **Async (publish)**: `ShipmentCreated`, `DeliveryCompleted`
+- **Consumes**: `OrderCompleted` (ship), `OrderCancelled` (stop)
+
+#### 📧 Notification Service
+- **Ingress (REST)**: `POST /api/notifications/send` (admin/ops)
+- **Async (consume)**: Listens to `Order*`, `Payment*`, `Delivery*`, `UserRegistered`
+- **Channels**: Email/SMS/Push via providers; retries and DLQ
+
+#### 🔍 Search Service
+- **Async (consume)**: `Product*` events for indexing
+- **Ingress (REST)**: `GET /api/search?q=...`
+
+#### 🎯 Recommendation Service
+- **Async (consume)**: `Order*`, `Cart*`, `Product*`, `User*`
+- **Ingress (REST)**: `GET /api/recommendations/{userId}`
+
+#### 📊 Analytics Service
+- **Async (consume)**: Aggregates from Data Pipeline (`product`, `order`, `payment`, etc.)
+- **Ingress (REST)**: `GET /api/analytics/...`
+
+#### 📈 Reporting Service
+- **Async (consume)**: Facts from Analytics or Pipeline sinks
+- **Ingress (REST)**: `GET /api/reports/...`
+
+#### 📝 Audit Service
+- **Async (consume)**: All important domain events
+- **Ingress (REST)**: `GET /api/audit/...` for browsing (optional)
+
+#### 🌊 Data Pipeline Service
+- **Async**: Stream processing/topologies. Sources from business topics → sinks to Analytics/Reporting stores.
+
+#### ☸️ Platform (Gateway, Registry, Config)
+- **Gateway**: Routes all REST; applies auth/rate‑limit/tracing
+- **Registry**: Service discovery (Eureka)
+- **Config**: Centralized config, dynamic refresh
+
+---
+
+### 🧭 Sequence: Payment Failure Rollback
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant GW as API Gateway
+  participant OS as Order Service
+  participant PS as Payment Service
+  participant IS as Inventory Service
+  participant NS as Notification
+  U->>GW: Checkout
+  GW->>OS: POST /orders
+  OS->>IS: Reserve stock
+  IS-->>OS: Reserved
+  OS->>PS: Authorize payment
+  PS-->>OS: PaymentFailed
+  OS->>IS: Release stock
+  OS-->>NS: Emit OrderCancelled
+  NS-->>U: Payment failed notification
+```
+
+### ↩️ Sequence: Order Cancellation by User
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant GW as API Gateway
+  participant OS as Order Service
+  participant PS as Payment Service
+  participant IS as Inventory Service
+  participant DS as Delivery Service
+  U->>GW: Cancel order
+  GW->>OS: PUT /orders/{id}/cancel
+  OS->>PS: Refund (if captured)
+  PS-->>OS: RefundIssued
+  OS->>IS: Release reserved stock
+  OS->>DS: Halt shipment (if any)
+  OS-->>U: Cancellation confirmed
+```
+
+### 🗂️ Event Flow Overview
+
+```mermaid
+graph LR
+  subgraph Producers
+    US[User]
+    PR[Product]
+    OR[Order]
+    PM[Payment]
+    IV[Inventory]
+    DV[Delivery]
+  end
+  subgraph Topics
+    UT((user.events))
+    PT((product.events))
+    OT((order.events))
+    PMT((payment.events))
+    IT((inventory.events))
+    DT((delivery.events))
+  end
+  subgraph Consumers
+    NS[Notification]
+    AN[Analytics]
+    RP[Reporting]
+    AU[Audit]
+    RC[Recommendation]
+    SR[Search]
+  end
+  US-->UT
+  PR-->PT
+  OR-->OT
+  PM-->PMT
+  IV-->IT
+  DV-->DT
+  UT-->NS & AN & AU & RC
+  PT-->SR & AN & AU & RC
+  OT-->NS & AN & AU & RC
+  PMT-->NS & AN & AU
+  IT-->AN & AU
+  DT-->NS & AN & AU
+```
 
 > Note: GitHub sanitizes inline SVG. If you see raw `<style>`/`<title>` text, use the static image below or open the repo in an IDE/local preview.
 
 ![Service Map (static)](docs/images/service-map-root.svg)
 
+---
 <p align="center">
   <a href="docs/interactive-service-map.html"><strong>Open Interactive Service Map (HTML)</strong></a>
   <br/>
