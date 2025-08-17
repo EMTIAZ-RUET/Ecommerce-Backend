@@ -38,6 +38,12 @@ Shared module:
     .arrow{stroke:#78909C;stroke-width:1.2;marker-end:url(#arrowhead)}
     a:hover text{ text-decoration: underline; }
     a{ cursor: pointer; }
+    @media (prefers-color-scheme: dark){
+      .node{fill:#0f172a}
+      .lbl{fill:#e2e8f0}
+      .title{fill:#ffffff}
+      .arrow{stroke:#94a3b8}
+    }
   </style>
   <defs>
     <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
@@ -68,10 +74,6 @@ Shared module:
     <rect class="node plat" x="320" y="70" width="140" height="34"/>
     <text class="lbl" x="390" y="92" text-anchor="middle">Logging</text>
   </a>
-  <a href="../reporting-service/README.md">
-    <rect class="node plat" x="500" y="70" width="140" height="34"/>
-    <text class="lbl" x="570" y="92" text-anchor="middle">Reporting</text>
-  </a>
   <a href="../audit-service/README.md">
     <rect class="node plat" x="680" y="70" width="140" height="34"/>
     <text class="lbl" x="750" y="92" text-anchor="middle">Audit</text>
@@ -82,62 +84,76 @@ Shared module:
   </a>
  
   <!-- Core row -->
-  <a href="../user-service/README.md">
+  <a href="http://localhost:8080/api/users/">
+    <title>User Service — /api/users</title>
     <rect class="node core" x="60" y="130" width="140" height="34"/>
     <text class="lbl" x="130" y="152" text-anchor="middle">User</text>
   </a>
-  <a href="../auth-service/README.md">
+  <a href="http://localhost:8080/api/auth/">
+    <title>Auth Service — /api/auth</title>
     <rect class="node core" x="240" y="130" width="140" height="34"/>
     <text class="lbl" x="310" y="152" text-anchor="middle">Auth</text>
   </a>
-  <a href="../product-service/README.md">
+  <a href="http://localhost:8080/api/products/">
+    <title>Product Service — /api/products</title>
     <rect class="node core" x="420" y="130" width="140" height="34"/>
     <text class="lbl" x="490" y="152" text-anchor="middle">Product</text>
   </a>
-  <a href="../cart-service/README.md">
+  <a href="http://localhost:8080/api/cart/">
+    <title>Cart Service — /api/cart</title>
     <rect class="node core" x="600" y="130" width="140" height="34"/>
     <text class="lbl" x="670" y="152" text-anchor="middle">Cart</text>
   </a>
-  <a href="../order-service/README.md">
+  <a href="http://localhost:8080/api/orders/">
+    <title>Order Service — /api/orders</title>
     <rect class="node core" x="780" y="130" width="140" height="34"/>
     <text class="lbl" x="850" y="152" text-anchor="middle">Order</text>
   </a>
-  <a href="../payment-service/README.md">
+  <a href="http://localhost:8080/api/payments/">
+    <title>Payment Service — /api/payments</title>
     <rect class="node core" x="60" y="180" width="140" height="34"/>
     <text class="lbl" x="130" y="202" text-anchor="middle">Payment</text>
   </a>
  
   <!-- Advanced rows -->
-  <a href="../inventory-service/README.md">
+  <a href="http://localhost:8080/api/inventory/">
+    <title>Inventory Service — /api/inventory</title>
     <rect class="node adv" x="240" y="230" width="140" height="34"/>
     <text class="lbl" x="310" y="252" text-anchor="middle">Inventory</text>
   </a>
-  <a href="../delivery-service/README.md">
+  <a href="http://localhost:8080/api/delivery/">
+    <title>Delivery Service — /api/delivery</title>
     <rect class="node adv" x="420" y="230" width="140" height="34"/>
     <text class="lbl" x="490" y="252" text-anchor="middle">Delivery</text>
   </a>
-  <a href="../notification-service/README.md">
+  <a href="http://localhost:8080/api/notifications/">
+    <title>Notification Service — /api/notifications</title>
     <rect class="node adv" x="600" y="230" width="140" height="34"/>
     <text class="lbl" x="670" y="252" text-anchor="middle">Notification</text>
   </a>
-  <a href="../search-service/README.md">
+  <a href="http://localhost:8080/api/search/">
+    <title>Search Service — /api/search</title>
     <rect class="node adv" x="780" y="230" width="140" height="34"/>
     <text class="lbl" x="850" y="252" text-anchor="middle">Search</text>
   </a>
   
-  <a href="../review-service/README.md">
+  <a href="http://localhost:8080/api/reviews/">
+    <title>Review Service — /api/reviews</title>
     <rect class="node adv" x="60" y="280" width="140" height="34"/>
     <text class="lbl" x="130" y="302" text-anchor="middle">Review</text>
   </a>
-  <a href="../recommendation-service/README.md">
+  <a href="http://localhost:8080/api/recommendations/">
+    <title>Recommendation Service — /api/recommendations</title>
     <rect class="node adv" x="240" y="280" width="180" height="34"/>
     <text class="lbl" x="330" y="302" text-anchor="middle">Recommendation</text>
   </a>
-  <a href="../analytics-service/README.md">
+  <a href="http://localhost:8080/api/analytics/">
+    <title>Analytics Service — /api/analytics</title>
     <rect class="node adv" x="440" y="280" width="140" height="34"/>
     <text class="lbl" x="510" y="302" text-anchor="middle">Analytics</text>
   </a>
-  <a href="../reporting-service/README.md">
+  <a href="http://localhost:8080/api/reports/">
+    <title>Reporting Service — /api/reports</title>
     <rect class="node adv" x="620" y="280" width="140" height="34"/>
     <text class="lbl" x="690" y="302" text-anchor="middle">Reporting</text>
   </a>
@@ -148,18 +164,22 @@ Shared module:
     <text class="lbl" x="130" y="352" text-anchor="middle">Audit</text>
   </a>
   <a href="../scheduler-service/README.md">
+    <title>Scheduler Service — batch jobs, cron tasks</title>
     <rect class="node plat" x="240" y="330" width="140" height="34"/>
     <text class="lbl" x="310" y="352" text-anchor="middle">Scheduler</text>
   </a>
-  <a href="../data-pipeline-service/README.md">
+  <a href="http://localhost:8080/api/pipeline/">
+    <title>Data Pipeline Service — /api/pipeline</title>
     <rect class="node plat" x="420" y="330" width="180" height="34"/>
     <text class="lbl" x="510" y="352" text-anchor="middle">Data Pipeline</text>
   </a>
   <a href="../logging-service/README.md">
+    <title>Logging Service — centralized logs</title>
     <rect class="node plat" x="620" y="330" width="140" height="34"/>
     <text class="lbl" x="690" y="352" text-anchor="middle">Logging</text>
   </a>
   <a href="../monitoring-service/README.md">
+    <title>Monitoring Service — metrics and health</title>
     <rect class="node plat" x="800" y="330" width="140" height="34"/>
     <text class="lbl" x="870" y="352" text-anchor="middle">Monitoring</text>
   </a>
@@ -179,6 +199,8 @@ Shared module:
 </svg>
  
 </div>
+
+<p align="center"><em>Static export:</em> <a href="images/service-map-architecture.svg">docs/images/service-map-architecture.svg</a></p>
 
 ---
 
