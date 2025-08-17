@@ -1,0 +1,32 @@
+site_name: Ecommerce Backend Docs
+site_description: Developer docs for the Ecommerce microservices system
+site_url: https://<your-github-username>.github.io/Ecommerce-Backend/
+
+theme:
+  name: material
+  features:
+    - navigation.expand
+    - navigation.sections
+    - content.code.copy
+
+nav:
+  - Home: INDEX.md
+  - System Architecture: Ecommerce-System-Architecture.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - pymdownx.details
+  - pymdownx.highlight
+
+plugins:
+  - search
+  - mermaid2
+
+extra_javascript:
+  - https://unpkg.com/mermaid@10.9.1/dist/mermaid.min.js
+  - js/mermaid-init.js
