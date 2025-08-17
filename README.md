@@ -695,6 +695,9 @@ flowchart LR
 - **Resilience**: Content moderation queue; anti‑abuse throttling
 
 ---
+<details>
+  <summary>Review Service – Interactions</summary>
+
 ```mermaid
 flowchart LR
   RV[Review] -->|Create/Update| EV{Emit Events}
@@ -702,6 +705,8 @@ flowchart LR
   RV -->|Fetch| US[User]
   RV -->|Fetch| PR[Product]
 ```
+
+</details>
 
 #### Details
 - **Responsibilities**: Manage product reviews/ratings and moderation.
@@ -860,12 +865,17 @@ flowchart LR
 - **Resilience**: Exactly‑once semantics with Kafka Streams; replayable sinks
 
 ---
+<details>
+  <summary>Analytics – Data Pipeline to Reporting</summary>
+
 ```mermaid
 flowchart LR
   DP[Data Pipeline Streams] --> AN[Analytics Aggregator]
   AN --> RP[Reporting]
   Client -->|/api/analytics| AN
 ```
+
+</details>
 
 #### Details
 - **Responsibilities**: Compute and expose business metrics and aggregates.
@@ -911,6 +921,9 @@ flowchart LR
 - **Resilience**: Rate limiting, retries, circuit breakers, tracing
 
 ---
+<details>
+  <summary>API Gateway – AuthZ and Proxy Flow</summary>
+
 ```mermaid
 sequenceDiagram
   autonumber
@@ -929,6 +942,8 @@ sequenceDiagram
     GW-->>CL: 401/403
   end
 ```
+
+</details>
 
 #### Details
 - **Responsibilities**: Route, authenticate, and enforce cross-cutting concerns for all APIs.
@@ -953,6 +968,9 @@ sequenceDiagram
 - **Egress**: Service lookup by clients/Gateway
 
 ---
+<details>
+  <summary>Service Registry – Discovery</summary>
+
 ```mermaid
 flowchart LR
   SVC1[Service A] --> RG[Eureka]
@@ -960,6 +978,8 @@ flowchart LR
   GW[Gateway] -->|Discover| RG
   SVC1 & SVC2 -->|Discover peers| RG
 ```
+
+</details>
 
 #### Details
 - **Responsibilities**: Maintain service instance registry and enable discovery.
@@ -983,6 +1003,9 @@ flowchart LR
 - **Resilience**: Cached config; fallback defaults
 
 ---
+<details>
+  <summary>Config Server – Bootstrap and Refresh</summary>
+
 ```mermaid
 sequenceDiagram
   autonumber
@@ -992,6 +1015,8 @@ sequenceDiagram
   CF-->>SV: application.yml (profile)
   SV-->>CF: /actuator/refresh (via Bus)
 ```
+
+</details>
 
 #### Details
 - **Responsibilities**: Serve centralized config to services across environments.
@@ -1015,12 +1040,17 @@ sequenceDiagram
 - **Resilience**: Backpressure; sampling
 
 ---
+<details>
+  <summary>Monitoring – Metrics, Dashboards, Alerts</summary>
+
 ```mermaid
 flowchart LR
   SVC[Services] --> MN[Monitoring]
   MN --> Dash[Dashboards]
   MN --> Alerts[Alerts]
 ```
+
+</details>
 
 #### Details
 - **Responsibilities**: Collect metrics/traces/logs and expose dashboards/alerts.
@@ -1044,12 +1074,17 @@ flowchart LR
 - **Egress**: ES/Kibana
 
 ---
+<details>
+  <summary>Logging – Shipping and Visualization</summary>
+
 ```mermaid
 flowchart LR
   SVC[Services] -->|Filebeat/Fluentd| LG[Logging]
   LG --> ES[(Elasticsearch)]
   ES --> KB[Kibana]
 ```
+
+</details>
 
 #### Details
 - **Responsibilities**: Centralize logs and provide query/visualization.
@@ -1072,11 +1107,16 @@ flowchart LR
 - **Consumes**: Aggregates from `Analytics`
 
 ---
+<details>
+  <summary>Reporting – From Analytics to Reports</summary>
+
 ```mermaid
 flowchart LR
   AN[Analytics] --> RP[Reporting]
   Client -->|/api/reports| RP
 ```
+
+</details>
 
 #### Details
 - **Responsibilities**: Deliver scheduled and ad-hoc business reports.
@@ -1119,11 +1159,16 @@ flowchart LR
 - **REST (via Gateway)**: Browse/search audit trails
 
 ---
+<details>
+  <summary>Audit – Event Ingestion and Browsing</summary>
+
 ```mermaid
 flowchart LR
   EV[Domain Events] --> AU[Audit Store]
   Client -->|Browse/Search| AU
 ```
+
+</details>
 
 #### Details
 - **Responsibilities**: Immutable audit trail for compliance and forensics.
@@ -1146,11 +1191,16 @@ flowchart LR
 - **Egress**: Object storage
 
 ---
+<details>
+  <summary>Backup – To Object Storage</summary>
+
 ```mermaid
 flowchart LR
   SC[Scheduler] --> BK[Backup]
   BK --> S3[(Object Storage)]
 ```
+
+</details>
 
 #### Details
 - **Responsibilities**: Automated backups and restores to object storage.
@@ -1173,12 +1223,17 @@ flowchart LR
 - **Triggers**: Backups, report generation, reindexing
 
 ---
+<details>
+  <summary>Scheduler – Cron Triggers</summary>
+
 ```mermaid
 flowchart LR
   SC[Scheduler] -->|Cron| BK[Backup]
   SC --> RP[Reporting]
   SC --> SR[Search Reindex]
 ```
+
+</details>
 
 #### Details
 - **Responsibilities**: Run scheduled jobs with distributed locks.
