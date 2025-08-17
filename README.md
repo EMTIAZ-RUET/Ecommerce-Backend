@@ -1298,6 +1298,9 @@ flowchart LR
 - **Used by**: All services; guarantees consistent contracts
 
 ---
+<details>
+  <summary>Common Library – Usage Across Services</summary>
+
 ```mermaid
 flowchart LR
   CL[Common Library] --> US[User]
@@ -1307,6 +1310,8 @@ flowchart LR
   CL --> DV[Delivery]
   CL --> Others[All Services]
 ```
+
+</details>
 
 #### Details
 - **Responsibilities**: Provide shared DTOs, event schemas, security, and error handling.
@@ -1417,6 +1422,9 @@ Direct links to OpenAPI specs through the API Gateway:
 | Common Library | n/a | — | — |
 
 ### 🌐 End-to-End All-Services Sequence (Full Picture)
+
+<details>
+  <summary>All Services – End-to-End Sequence</summary>
 
 ```mermaid
 sequenceDiagram
@@ -1530,6 +1538,8 @@ sequenceDiagram
   BK-->>MN: Backup metrics
 ```
 
+</details>
+
 ### 🛒 **Complete E-Commerce Workflow**
 
 ```
@@ -1562,6 +1572,9 @@ sequenceDiagram
 
 ### 📜 Sequence Diagram (Checkout Flow)
 
+<details>
+  <summary>Checkout Flow – Happy Path</summary>
+
 ```mermaid
 sequenceDiagram
   autonumber
@@ -1587,6 +1600,8 @@ sequenceDiagram
   OS-->>NS: Emit OrderCompleted event
   NS-->>U: Send confirmation
 ```
+
+</details>
 
 ### 📣 Kafka Topics
 
@@ -1690,6 +1705,9 @@ The following summarizes how each service communicates with others. Sync traffic
 
 ### 🧭 Sequence: Payment Failure Rollback
 
+<details>
+  <summary>Order Flow – Payment Failure and Rollback</summary>
+
 ```mermaid
 sequenceDiagram
   autonumber
@@ -1710,7 +1728,12 @@ sequenceDiagram
   NS-->>U: Payment failed notification
 ```
 
+</details>
+
 ### ↩️ Sequence: Order Cancellation by User
+
+<details>
+  <summary>Order Cancellation – User Initiated</summary>
 
 ```mermaid
 sequenceDiagram
@@ -1730,7 +1753,12 @@ sequenceDiagram
   OS-->>U: Cancellation confirmed
 ```
 
+</details>
+
 ### 🗂️ Event Flow Overview
+
+<details>
+  <summary>Event Flow – Producers, Topics, Consumers</summary>
 
 ```mermaid
 graph LR
@@ -1772,6 +1800,8 @@ graph LR
   DT-->NS & AN & AU
 ```
 
+</details>
+
 > Note: GitHub sanitizes inline SVG. If you see raw `<style>`/`<title>` text, use the static image below or open the repo in an IDE/local preview.
 
 ![Service Map (static)](docs/images/service-map-root.svg)
@@ -1812,6 +1842,9 @@ graph LR
 Note: If a link returns 404, ensure the service includes Springdoc OpenAPI and exposes Swagger UI; otherwise, use the base route links or service README.
 
 ### 🧩 Component Architecture
+
+<details>
+  <summary>Component Architecture – Core, Advanced, Platform</summary>
 
 ```mermaid
 graph LR
@@ -1888,6 +1921,9 @@ graph LR
 
 ### 🌐 Deployment Topology
 
+<details>
+  <summary>Deployment Topology – K8s Cluster/Namespace</summary>
+
 ```mermaid
 graph TB
   subgraph Cluster
@@ -1922,6 +1958,8 @@ graph TB
   DP-->AN & RP
   US-->AD
 ```
+
+</details>
 
 ### 🖼️ Illustrations
 
