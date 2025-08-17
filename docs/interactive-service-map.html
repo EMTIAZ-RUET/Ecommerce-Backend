@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Interactive Service Map</title>
+  <style>
+    body{font-family:Segoe UI,Roboto,Arial,sans-serif;margin:16px;line-height:1.45}
+    .wrap{display:flex;justify-content:center}
+    .hint{color:#64748b;font-size:13px;margin:8px 0 16px}
+    @media (prefers-color-scheme: dark){ .hint{color:#94a3b8} }
+    object{width:100%;max-width:980px;height:440px;border:1px solid #e5e7eb;border-radius:8px}
+  </style>
+</head>
+<body>
+  <h1>Interactive Service Map</h1>
+  <div class="hint">Links open live API Gateway routes (http://localhost:8080). If it doesn’t load, ensure the stack is running.</div>
+  <div class="wrap">
+    <object data="images/service-map-root.svg" type="image/svg+xml">Your browser does not support inline SVG.</object>
+  </div>
+</body>
+</html>
