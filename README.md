@@ -735,12 +735,17 @@ flowchart LR
 - **Resilience**: Bulk indexing with retries; circuit breaker on ES
 
 ---
+<details>
+  <summary>Search Service – Indexing Flow</summary>
+
 ```mermaid
 flowchart LR
   PR[Product Events] -->|Kafka| SR[Search Indexer]
   SR --> ES[(Elasticsearch)]
   Client -->|/api/search| SR
 ```
+
+</details>
 
 #### Details
 - **Responsibilities**: Full-text search and facets; maintain index from product events.
@@ -785,12 +790,17 @@ flowchart LR
 - **Resilience**: Model versioning; fallback to popular items
 
 ---
+<details>
+  <summary>Recommendation Service – Event Flow</summary>
+
 ```mermaid
 flowchart LR
   EV[Orders/Cart/Product/User Events] --> RC[Recommendation]
   RC --> FEED[Personalized Feed]
   Client -->|/api/recommendations| RC
 ```
+
+</details>
 
 #### Details
 - **Responsibilities**: Generate personalized recommendations.
